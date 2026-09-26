@@ -436,7 +436,7 @@ Fokus utama project:
 **Dibuat Oleh:** HyperGaruda (Hanzet22)
 
 - **Instagram:** `@muhamad_farhannn_`
-- **Douyin:** Profil Douyin
+- **Douyin:** `https://v.douyin.com/P0Qx2tl0KSA/`
 - **GitHub:** `Hanzet22`
 - **Behance:** `farhanzet_22`
 - **Discord Private DM:** `hgi.id`
