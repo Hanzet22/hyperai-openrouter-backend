@@ -921,59 +921,6 @@
     }
 
     /* ---------------------------------------------------------
-       DEVTOOLS DETECTION / LOCK OVERLAY
-       --------------------------------------------------------- */
-
-    .guard {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: none;
-      place-items: center;
-      padding: 24px;
-      background:
-        radial-gradient(circle at 50% 35%, rgba(255,95,122,0.10), transparent 38%),
-        rgba(4, 6, 10, 0.98);
-      backdrop-filter: blur(20px);
-    }
-
-    .guard.show {
-      display: grid;
-      animation: guardIn .28s ease;
-    }
-
-    @keyframes guardIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .guard-card {
-      width: min(520px, 100%);
-      text-align: center;
-      padding: 28px;
-      border: 1px solid rgba(255,95,122,0.22);
-      border-radius: 20px;
-      background: rgba(13,19,29,0.90);
-      box-shadow: var(--shadow);
-    }
-
-    .guard-card .icon {
-      font-size: 34px;
-      margin-bottom: 12px;
-    }
-
-    .guard-card h3 {
-      font-size: 18px;
-    }
-
-    .guard-card p {
-      margin-top: 9px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.6;
-    }
-
-    /* ---------------------------------------------------------
        RESPONSIVE
        --------------------------------------------------------- */
 
@@ -1032,15 +979,6 @@
         transition-duration: 0.01ms !important;
       }
     }
-
-    /* ---------------------------------------------------------
-       GUARD LOCK
-       --------------------------------------------------------- */
-
-    html.guard-locked,
-    html.guard-locked body {
-      overflow: hidden !important;
-    }
   </style>
 </head>
 
@@ -1096,6 +1034,8 @@
           <input
             id="model"
             class="input"
+            type="text"
+            readonly
             value="openrouter/free"
             autocomplete="off"
             spellcheck="false"
@@ -1118,7 +1058,7 @@
           <h2>Push the prompt.<br>Let the model run.</h2>
           <p>
             Streaming OpenRouter chat client with a cyber-style animated UI,
-            keyboard handling, session history, and local frontend safeguards.
+            keyboard handling, and session history.
           </p>
 
           <div class="quick-grid">
@@ -1178,60 +1118,17 @@
 
   <div id="toast" class="toast" role="status"></div>
 
-  <div id="guard" class="guard" role="dialog" aria-modal="true" aria-live="assertive">
-    <div class="guard-card">
-      <div class="icon">🛡️</div>
-      <h3>Developer tools detected</h3>
-      <p>
-        This frontend uses best-effort browser deterrents for DevTools and Eruda.
-        Client-side code cannot provide real secrecy: anything shipped to a browser
-        can ultimately be inspected.
-      </p>
-    </div>
-  </div>
-
   <script>
     "use strict";
 
-    /*
-      ==========================================================
-      CONFIG
-      ==========================================================
-
-      IMPORTANT:
-      The API key is intentionally NOT present in this frontend.
-
-      Replace ONLY the placeholder string.
-
-      SECURITY NOTE:
-      A key embedded in browser JavaScript is public to anyone
-      who can access the deployed site. Do NOT reuse a valuable
-      production key for a public deployment.
-
-      Safer production architecture:
-      Browser -> Vercel Function -> OpenRouter
-      with OPENROUTER_API_KEY stored as a server-side environment variable.
-      ==========================================================
-    */
-
-    // API key is NEVER stored in this frontend.
-    // Requests go through /api/chat, where Vercel reads
-    // OPENROUTER_API_KEY from a server-side environment variable.
-
     const DEFAULT_MODEL = "openrouter/free";
     const API_URL = "/api/chat";
-
-    const SITE_TITLE = "HyperAI // OpenRouter";
 
     const SYSTEM_MESSAGE = {
       role: "system",
       content:
         "You are a helpful AI assistant. Be accurate, practical, and concise when appropriate."
     };
-
-    /* ==========================================================
-       DOM
-       ========================================================== */
 
     const $ = (selector) => document.querySelector(selector);
 
@@ -1254,13 +1151,7 @@
 
     const statusDot = $("#statusDot");
     const statusText = $("#statusText");
-
-    const guard = $("#guard");
     const cursorGlow = $("#cursorGlow");
-
-    /* ==========================================================
-       STATE
-       ========================================================== */
 
     let messages = [];
     let lastUserPrompt = "";
@@ -1268,23 +1159,14 @@
     let generating = false;
     let toastTimer = null;
 
-    /* ==========================================================
-       STARTUP
-       ========================================================== */
-
-    // Deliberately blank: the secret never enters the browser.
     apiKeyInput.value = "";
     apiKeyInput.placeholder = "Server-side key configured";
-    modelInput.value = localStorage.getItem("hyperai_model") || DEFAULT_MODEL;
+    modelInput.value = DEFAULT_MODEL;
 
-    modelHint.textContent = "Model: " + modelInput.value;
+    modelHint.textContent = "Model: " + DEFAULT_MODEL;
 
     updateStatus("Ready", "ready");
     autoResize();
-
-    /* ==========================================================
-       STATUS / TOAST
-       ========================================================== */
 
     function updateStatus(text, state = "") {
       statusText.textContent = text;
@@ -1310,10 +1192,6 @@
       }, 2500);
     }
 
-    /* ==========================================================
-       TEXT / MARKDOWN HELPERS
-       ========================================================== */
-
     function escapeHTML(value) {
       return String(value)
         .replaceAll("&", "&amp;")
@@ -1325,7 +1203,6 @@
 
     function renderMarkdown(text) {
       let safe = escapeHTML(text);
-
       const codeBlocks = [];
 
       safe = safe.replace(
@@ -1336,63 +1213,26 @@
         }
       );
 
-      safe = safe.replace(
-        /`([^`]+)`/g,
-        "<code>$1</code>"
-      );
-
-      safe = safe.replace(
-        /\*\*([^*]+)\*\*/g,
-        "<strong>$1</strong>"
-      );
-
-      safe = safe.replace(
-        /\*([^*]+)\*/g,
-        "<em>$1</em>"
-      );
-
+      safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+      safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
       safe = safe.replace(
         /(https?:\/\/[^\s<]+)/g,
         '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
       );
-
-      safe = safe.replace(
-        /^\s*[-*]\s+(.+)$/gm,
-        "<li>$1</li>"
-      );
-
-      safe = safe.replace(
-        /(<li>[\s\S]*?<\/li>)(?:\n|$)/g,
-        "$1"
-      );
-
-      safe = safe.replace(
-        /\n{2,}/g,
-        "</p><p>"
-      );
-
+      safe = safe.replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>");
+      safe = safe.replace(/(<li>[\s\S]*?<\/li>)(?:\n|$)/g, "$1");
+      safe = safe.replace(/\n{2,}/g, "</p><p>");
       safe = "<p>" + safe + "</p>";
-
-      safe = safe.replaceAll(
-        "<p><li>",
-        "<ul><li>"
-      );
-
-      safe = safe.replaceAll(
-        "</li></p>",
-        "</li></ul>"
-      );
+      safe = safe.replaceAll("<p><li>", "<ul><li>");
+      safe = safe.replaceAll("</li></p>", "</li></ul>");
 
       codeBlocks.forEach((block, index) => {
         const token = `@@CODEBLOCK_${index}@@`;
-        safe = safe.replace(
-          token,
-          `<pre><code>${block}</code></pre>`
-        );
+        safe = safe.replace(token, `<pre><code>${block}</code></pre>`);
       });
 
       safe = safe.replaceAll("<p></p>", "");
-
       return safe;
     }
 
@@ -1424,17 +1264,13 @@
 
       body.appendChild(meta);
       body.appendChild(bubble);
-
       wrapper.appendChild(avatar);
       wrapper.appendChild(body);
 
       chat.appendChild(wrapper);
       scrollToBottom();
 
-      return {
-        wrapper,
-        bubble
-      };
+      return { wrapper, bubble };
     }
 
     function addCopyButton(messageElement, content) {
@@ -1460,13 +1296,11 @@
 
     function addThinkingMessage() {
       const node = createMessage("assistant");
-
       node.bubble.innerHTML = `
         <span class="typing" aria-label="Thinking">
           <i></i><i></i><i></i>
         </span>
       `;
-
       return node;
     }
 
@@ -1476,26 +1310,16 @@
       });
     }
 
-    /* ==========================================================
-       COMPOSER
-       ========================================================== */
-
     function autoResize() {
       promptInput.style.height = "auto";
-      promptInput.style.height =
-        Math.min(promptInput.scrollHeight, 180) + "px";
-
-      charCount.textContent =
-        `${promptInput.value.length} / 12000`;
+      promptInput.style.height = Math.min(promptInput.scrollHeight, 180) + "px";
+      charCount.textContent = `${promptInput.value.length} / 12000`;
     }
 
     promptInput.addEventListener("input", autoResize);
 
     promptInput.addEventListener("keydown", (event) => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey
-      ) {
+      if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         sendMessage();
       }
@@ -1505,29 +1329,10 @@
       showToast("API key is server-side and never exposed to this page.");
     });
 
-    modelInput.addEventListener("input", () => {
-      localStorage.setItem("hyperai_model", modelInput.value.trim());
-      modelHint.textContent =
-        "Model: " + (modelInput.value.trim() || DEFAULT_MODEL);
-    });
-
-    /* ==========================================================
-       REQUEST HELPERS
-       ========================================================== */
-
-    function getModel() {
-      return (
-        modelInput.value.trim() ||
-        DEFAULT_MODEL
-      );
-    }
-
     function setGeneratingState(value) {
       generating = value;
-
       sendBtn.style.display = value ? "none" : "grid";
       stopBtn.style.display = value ? "grid" : "none";
-
       promptInput.disabled = value;
 
       if (value) {
@@ -1550,55 +1355,35 @@
 
       while (true) {
         const { value, done } = await reader.read();
-
         if (done) break;
 
-        buffer += decoder.decode(value, {
-          stream: true
-        });
-
+        buffer += decoder.decode(value, { stream: true });
         const events = buffer.split("\n\n");
         buffer = events.pop() || "";
 
         for (const event of events) {
           const lines = event.split("\n");
-
           for (const line of lines) {
-            if (!line.startsWith("data:")) {
-              continue;
-            }
-
+            if (!line.startsWith("data:")) continue;
             const payload = line.slice(5).trim();
-
-            if (!payload) {
-              continue;
-            }
-
-            if (payload === "[DONE]") {
-              return fullText;
-            }
+            if (!payload) continue;
+            if (payload === "[DONE]") return fullText;
 
             let json;
-
             try {
               json = JSON.parse(payload);
             } catch {
               continue;
             }
 
-            const delta =
-              json?.choices?.[0]?.delta?.content;
-
+            const delta = json?.choices?.[0]?.delta?.content;
             if (typeof delta === "string" && delta) {
               fullText += delta;
               onDelta(delta, fullText);
             }
 
             const streamError = json?.error?.message;
-
-            if (streamError) {
-              throw new Error(streamError);
-            }
+            if (streamError) throw new Error(streamError);
           }
         }
       }
@@ -1606,26 +1391,13 @@
       return fullText;
     }
 
-    /* ==========================================================
-       SEND
-       ========================================================== */
-
     async function sendMessage(customPrompt = null) {
-      if (generating) {
-        return;
-      }
-
-      const model = getModel();
+      if (generating) return;
 
       const prompt =
         typeof customPrompt === "string"
           ? customPrompt.trim()
           : promptInput.value.trim();
-
-      if (!model) {
-        showToast("Model ID is required.", "error");
-        return;
-      }
 
       if (!prompt) {
         promptInput.focus();
@@ -1633,108 +1405,62 @@
       }
 
       lastUserPrompt = prompt;
-
-      messages.push({
-        role: "user",
-        content: prompt
-      });
+      messages.push({ role: "user", content: prompt });
 
       createMessage("user", prompt);
-
       promptInput.value = "";
       autoResize();
 
       const thinking = addThinkingMessage();
       setGeneratingState(true);
-
       activeController = new AbortController();
 
       try {
-        const response = await fetch(
-          API_URL,
-          {
-            method: "POST",
-            signal: activeController.signal,
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                SYSTEM_MESSAGE,
-                ...messages
-              ]
-            })
-          }
-        );
+        const response = await fetch(API_URL, {
+          method: "POST",
+          signal: activeController.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: DEFAULT_MODEL,
+            messages: [SYSTEM_MESSAGE, ...messages]
+          })
+        });
 
         if (!response.ok) {
           let message = `HTTP ${response.status}`;
-
           try {
             const data = await response.json();
-            message =
-              data?.error?.message ||
-              data?.message ||
-              message;
-          } catch {
-            // Keep HTTP status fallback.
-          }
-
+            message = data?.error?.message || data?.message || message;
+          } catch {}
           throw new Error(message);
         }
 
-        let answer = "";
-
         thinking.bubble.classList.add("stream-caret");
-
-        answer = await parseOpenRouterStream(
-          response,
-          (_delta, full) => {
-            thinking.bubble.innerHTML =
-              renderMarkdown(full);
-            scrollToBottom();
-          }
-        );
+        const answer = await parseOpenRouterStream(response, (_delta, full) => {
+          thinking.bubble.innerHTML = renderMarkdown(full);
+          scrollToBottom();
+        });
 
         thinking.bubble.classList.remove("stream-caret");
 
         if (!answer.trim()) {
-          throw new Error(
-            "The model returned an empty response."
-          );
+          throw new Error("The model returned an empty response.");
         }
 
-        messages.push({
-          role: "assistant",
-          content: answer
-        });
-
-        addCopyButton(
-          thinking.wrapper,
-          answer
-        );
-
+        messages.push({ role: "assistant", content: answer });
+        addCopyButton(thinking.wrapper, answer);
         updateStatus("Ready", "ready");
 
       } catch (error) {
         thinking.bubble.classList.remove("stream-caret");
 
         if (error?.name === "AbortError") {
-          thinking.bubble.innerHTML =
-            "<p>Generation stopped.</p>";
+          thinking.bubble.innerHTML = "<p>Generation stopped.</p>";
           updateStatus("Stopped", "ready");
         } else {
-          thinking.bubble.innerHTML =
-            `<p><strong>Request failed:</strong> ${escapeHTML(
-              error?.message || "Unknown error"
-            )}</p>`;
-
+          thinking.bubble.innerHTML = `<p><strong>Request failed:</strong> ${escapeHTML(error?.message || "Unknown error")}</p>`;
           updateStatus("Request failed", "error");
-          showToast(
-            error?.message || "Request failed",
-            "error"
-          );
+          showToast(error?.message || "Request failed", "error");
         }
       } finally {
         activeController = null;
@@ -1742,28 +1468,16 @@
       }
     }
 
-    sendBtn.addEventListener("click", () => {
-      sendMessage();
-    });
-
-    stopBtn.addEventListener("click", () => {
-      activeController?.abort();
-    });
-
-    /* ==========================================================
-       SESSION
-       ========================================================== */
+    sendBtn.addEventListener("click", () => sendMessage());
+    stopBtn.addEventListener("click", () => activeController?.abort());
 
     clearBtn.addEventListener("click", () => {
       activeController?.abort();
-
       messages = [];
       lastUserPrompt = "";
-
       chat.innerHTML = "";
       chat.appendChild(welcome);
       welcome.style.display = "";
-
       setGeneratingState(false);
       showToast("Conversation cleared.");
     });
@@ -1773,36 +1487,20 @@
         showToast("Nothing to regenerate yet.");
         return;
       }
-
       const previous = messages[messages.length - 1];
-
-      if (
-        previous?.role === "user" &&
-        previous.content === lastUserPrompt
-      ) {
+      if (previous?.role === "user" && previous.content === lastUserPrompt) {
         messages.pop();
       }
-
       sendMessage(lastUserPrompt);
     });
 
     copyLastBtn.addEventListener("click", async () => {
-      const lastAssistant = [...messages]
-        .reverse()
-        .find(
-          (message) =>
-            message.role === "assistant"
-        );
-
+      const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
       if (!lastAssistant) {
         showToast("No assistant response yet.");
         return;
       }
-
-      await copyText(
-        lastAssistant.content
-      );
-
+      await copyText(lastAssistant.content);
       showToast("Last response copied.");
     });
 
@@ -1822,144 +1520,18 @@
       }
     }
 
-    /* ==========================================================
-       QUICK PROMPTS
-       ========================================================== */
-
     document.querySelectorAll("[data-prompt]").forEach((button) => {
       button.addEventListener("click", () => {
-        promptInput.value =
-          button.dataset.prompt || "";
-
+        promptInput.value = button.dataset.prompt || "";
         autoResize();
         promptInput.focus();
       });
     });
 
-    /* ==========================================================
-       CURSOR GLOW
-       ========================================================== */
-
     window.addEventListener("pointermove", (event) => {
       cursorGlow.style.left = event.clientX + "px";
       cursorGlow.style.top = event.clientY + "px";
     }, { passive: true });
-
-    /* ==========================================================
-       BEST-EFFORT FRONTEND DEVTOOLS / ERUDA DETERRENTS
-       ==========================================================
-
-       These are intentionally non-destructive:
-       - block common shortcuts
-       - block context menu
-       - detect common Eruda globals/classes
-       - detect large DevTools window changes
-
-       They do NOT make frontend code secret or secure.
-       ========================================================== */
-
-    function isErudaDetected() {
-      const globalEruda =
-        typeof window.eruda !== "undefined";
-
-      const erudaDom =
-        !!document.querySelector(
-          ".eruda-dev-tools, .eruda-entry-btn"
-        );
-
-      return globalEruda || erudaDom;
-    }
-
-    function setGuard(show, reason = "") {
-      if (show) {
-        document.documentElement.classList.add(
-          "guard-locked"
-        );
-
-        guard.classList.add("show");
-
-        if (reason) {
-          console.warn(
-            "[HyperAI guard]",
-            reason
-          );
-        }
-      } else {
-        document.documentElement.classList.remove(
-          "guard-locked"
-        );
-
-        guard.classList.remove("show");
-      }
-    }
-
-    document.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      showToast("Context menu disabled.");
-    });
-
-    document.addEventListener("keydown", (event) => {
-      const key = event.key.toLowerCase();
-
-      const blocked =
-        key === "f12" ||
-        (
-          event.ctrlKey &&
-          event.shiftKey &&
-          ["i", "j", "c"].includes(key)
-        ) ||
-        (
-          event.ctrlKey &&
-          ["u", "s"].includes(key)
-        ) ||
-        (
-          event.metaKey &&
-          event.altKey &&
-          ["i", "j", "c"].includes(key)
-        );
-
-      if (blocked) {
-        event.preventDefault();
-        event.stopPropagation();
-        showToast("Developer shortcut blocked.");
-      }
-    }, true);
-
-    let devtoolsPreviouslyOpen = false;
-
-    function detectDevTools() {
-      const widthDelta =
-        Math.abs(window.outerWidth - window.innerWidth);
-
-      const heightDelta =
-        Math.abs(window.outerHeight - window.innerHeight);
-
-      const likelyOpen =
-        widthDelta > 220 ||
-        heightDelta > 220 ||
-        isErudaDetected();
-
-      if (likelyOpen && !devtoolsPreviouslyOpen) {
-        setGuard(
-          true,
-          "DevTools / Eruda heuristic triggered."
-        );
-      }
-
-      if (!likelyOpen && devtoolsPreviouslyOpen) {
-        setGuard(false);
-      }
-
-      devtoolsPreviouslyOpen = likelyOpen;
-    }
-
-    setInterval(detectDevTools, 1100);
-
-    window.addEventListener("resize", detectDevTools);
-
-    /* ==========================================================
-       TAB VISIBILITY / ACTIVITY
-       ========================================================== */
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && generating) {
@@ -1968,10 +1540,6 @@
         updateStatus("Ready", "ready");
       }
     });
-
-    /* ==========================================================
-       INITIAL FOCUS
-       ========================================================== */
 
     setTimeout(() => {
       promptInput.focus();
