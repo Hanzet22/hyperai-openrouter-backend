@@ -91,10 +91,17 @@ export default async function handler(req, res) {
     return sendJson(res, 413, { error: "Conversation is too long." });
   }
 
-  const normalizedMessages = messages.map((message) => ({
+  const userMessages = messages.map((message) => ({
     role: message?.role,
     content: message?.content
   }));
+
+  const systemInstruction = {
+    role: "system",
+    content: "Lu adalah HyperAI, asisten chat yang asyik, santai, gokil, dan friendly banget. Gunakan bahasa Indonesia gaul, kasual khas tongkrongan, pakai kata 'lu', 'gua', 'bre', 'wkwkwk', atau 'coy'. JANGAN PERNAH pakai bahasa baku, kaku, atau formal (seperti 'Anda', 'Saya', 'terima kasih atas pertanyaan Anda') kecuali user yang minta secara spesifik. Jawab dengan ringkas, punchy, dan langsung ke intinya!"
+  };
+
+  const normalizedMessages = [systemInstruction, ...userMessages];
 
   const upstream = await fetch(OPENROUTER_URL, {
     method: "POST",
