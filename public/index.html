@@ -1,0 +1,1981 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a12">
+  <meta name="description" content="Local-first animated OpenRouter AI client">
+
+  <title>HyperAI // OpenRouter</title>
+
+  <style>
+    :root {
+      --bg-0: #05070b;
+      --bg-1: #080c15;
+      --panel: rgba(12, 17, 28, 0.72);
+      --panel-solid: #0d1420;
+      --panel-2: rgba(17, 24, 39, 0.84);
+      --line: rgba(148, 163, 184, 0.16);
+      --line-strong: rgba(148, 163, 184, 0.28);
+      --text: #eef4ff;
+      --muted: #8c99ad;
+      --accent: #62a8ff;
+      --accent-2: #8b5cff;
+      --cyan: #42e8ff;
+      --danger: #ff5f7a;
+      --success: #45e0a0;
+      --user: linear-gradient(135deg, rgba(54, 104, 180, 0.28), rgba(98, 168, 255, 0.10));
+      --assistant: linear-gradient(135deg, rgba(28, 38, 58, 0.76), rgba(16, 22, 35, 0.82));
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--bg-0);
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      color: var(--text);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ---------------------------------------------------------
+       BACKGROUND
+       --------------------------------------------------------- */
+
+    .scene {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 15%, rgba(98, 168, 255, 0.09), transparent 28%),
+        radial-gradient(circle at 82% 17%, rgba(139, 92, 255, 0.11), transparent 28%),
+        radial-gradient(circle at 50% 92%, rgba(66, 232, 255, 0.07), transparent 34%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+    }
+
+    .scene::before {
+      content: "";
+      position: absolute;
+      inset: -45%;
+      background:
+        linear-gradient(
+          transparent 49.5%,
+          rgba(98, 168, 255, 0.045) 50%,
+          transparent 50.5%
+        ),
+        linear-gradient(
+          90deg,
+          transparent 49.5%,
+          rgba(98, 168, 255, 0.035) 50%,
+          transparent 50.5%
+        );
+      background-size: 64px 64px;
+      transform: perspective(600px) rotateX(67deg) translateY(18%);
+      transform-origin: center bottom;
+      animation: gridDrift 18s linear infinite;
+    }
+
+    .scene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.016) 0,
+          rgba(255, 255, 255, 0.016) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+      opacity: 0.28;
+      mix-blend-mode: screen;
+    }
+
+    .orb {
+      position: absolute;
+      width: 42vw;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.16;
+      animation: orbit 16s ease-in-out infinite;
+    }
+
+    .orb.a {
+      top: -24vw;
+      left: -12vw;
+      background: #2d7fff;
+    }
+
+    .orb.b {
+      top: 10vh;
+      right: -20vw;
+      background: #8b3dff;
+      animation-delay: -5s;
+    }
+
+    .orb.c {
+      bottom: -28vw;
+      left: 34vw;
+      background: #00c8ff;
+      animation-delay: -10s;
+    }
+
+    .cursor-glow {
+      position: fixed;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(98, 168, 255, 0.10), transparent 68%);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(4px);
+    }
+
+    @keyframes gridDrift {
+      from { transform: perspective(600px) rotateX(67deg) translateY(18%) translateY(0); }
+      to   { transform: perspective(600px) rotateX(67deg) translateY(18%) translateY(64px); }
+    }
+
+    @keyframes orbit {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(4vw, 5vh, 0) scale(1.08); }
+    }
+
+    /* ---------------------------------------------------------
+       APP SHELL
+       --------------------------------------------------------- */
+
+    .app {
+      position: relative;
+      z-index: 2;
+      width: min(1180px, 100%);
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      background: rgba(4, 7, 12, 0.46);
+      border-inline: 1px solid rgba(255,255,255,0.04);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(12,17,28,0.92), rgba(8,12,20,0.74));
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(98,168,255,0.6),
+        rgba(139,92,255,0.6),
+        transparent
+      );
+      opacity: 0.6;
+      animation: scanline 4.6s linear infinite;
+    }
+
+    @keyframes scanline {
+      from { transform: translateX(-70%); }
+      to { transform: translateX(70%); }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(98,168,255,0.28);
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(98,168,255,0.30), transparent 46%),
+        rgba(12, 20, 34, 0.86);
+      box-shadow:
+        inset 0 0 24px rgba(98,168,255,0.08),
+        0 0 24px rgba(98,168,255,0.06);
+      overflow: hidden;
+    }
+
+    .brand-mark::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: conic-gradient(
+        from 0deg,
+        transparent,
+        rgba(98,168,255,0.65),
+        transparent,
+        rgba(139,92,255,0.65),
+        transparent
+      );
+      animation: spin 8s linear infinite;
+    }
+
+    .brand-mark span {
+      position: relative;
+      z-index: 1;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-copy h1 {
+      font-size: 14px;
+      line-height: 1.1;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-copy p {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .top-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(8, 13, 22, 0.58);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #64748b;
+      box-shadow: 0 0 0 transparent;
+      transition: 0.25s ease;
+    }
+
+    .status-dot.ready {
+      background: var(--success);
+      box-shadow: 0 0 14px rgba(69, 224, 160, 0.72);
+    }
+
+    .status-dot.busy {
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(98, 168, 255, 0.72);
+      animation: statusPulse 1s ease-in-out infinite;
+    }
+
+    .status-dot.error {
+      background: var(--danger);
+      box-shadow: 0 0 14px rgba(255, 95, 122, 0.72);
+    }
+
+    @keyframes statusPulse {
+      50% { transform: scale(1.55); opacity: 0.55; }
+    }
+
+    /* ---------------------------------------------------------
+       CONTROL BAR
+       --------------------------------------------------------- */
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(190px, 280px) auto;
+      gap: 10px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(9, 14, 23, 0.60);
+    }
+
+    .control {
+      min-width: 0;
+    }
+
+    .control label {
+      display: block;
+      margin: 0 0 6px 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input,
+    .select,
+    .mini-btn {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      outline: none;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(16, 24, 38, 0.86), rgba(10, 16, 27, 0.86));
+      transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease,
+        background .2s ease;
+    }
+
+    .input,
+    .select {
+      padding: 0 12px;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: rgba(98,168,255,0.60);
+      box-shadow: 0 0 0 3px rgba(98,168,255,0.08);
+    }
+
+    .select {
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .mini-btn {
+      width: auto;
+      padding: 0 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .mini-btn:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .mini-btn.primary {
+      border-color: rgba(98,168,255,0.40);
+      background: linear-gradient(135deg, rgba(98,168,255,0.20), rgba(139,92,255,0.16));
+    }
+
+    .mini-btn.danger {
+      border-color: rgba(255,95,122,0.32);
+      color: #ffc0cb;
+    }
+
+    /* ---------------------------------------------------------
+       CHAT
+       --------------------------------------------------------- */
+
+    .chat-wrap {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .chat {
+      height: 100%;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+      padding: 28px 18px 26px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148,163,184,0.22) transparent;
+    }
+
+    .chat::-webkit-scrollbar {
+      width: 9px;
+    }
+
+    .chat::-webkit-scrollbar-thumb {
+      background: rgba(148,163,184,0.18);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .welcome {
+      width: min(720px, 100%);
+      margin: 12vh auto 0;
+      text-align: center;
+      animation: welcomeIn .85s cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes welcomeIn {
+      from { opacity: 0; transform: translateY(20px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .welcome-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #bfd7ff;
+      background: rgba(11,18,31,0.72);
+      box-shadow: inset 0 0 24px rgba(98,168,255,0.05);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .welcome h2 {
+      margin-top: 18px;
+      font-size: clamp(29px, 5vw, 52px);
+      line-height: .98;
+      letter-spacing: -0.045em;
+      background: linear-gradient(
+        90deg,
+        #ffffff 0%,
+        #a9ccff 30%,
+        #d0bbff 65%,
+        #ffffff 100%
+      );
+      background-size: 220% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: titleShift 7s linear infinite;
+    }
+
+    @keyframes titleShift {
+      to { background-position: 220% center; }
+    }
+
+    .welcome p {
+      max-width: 620px;
+      margin: 15px auto 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 720px;
+      margin: 22px auto 0;
+    }
+
+    .quick {
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: #cdd8ea;
+      background: rgba(10, 16, 27, 0.54);
+      cursor: pointer;
+      text-align: left;
+      transition:
+        transform .25s ease,
+        border-color .25s ease,
+        background .25s ease;
+    }
+
+    .quick:hover {
+      transform: translateY(-4px);
+      border-color: rgba(98,168,255,0.30);
+      background: rgba(16,24,39,0.74);
+    }
+
+    .quick strong {
+      display: block;
+      font-size: 11px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .quick span {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .message {
+      width: min(900px, 100%);
+      margin: 0 auto 18px;
+      display: flex;
+      gap: 10px;
+      animation: messageIn .34s cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: #cfe2ff;
+      background: rgba(16, 24, 39, 0.84);
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+
+    .message.user .avatar {
+      background: rgba(54, 104, 180, 0.16);
+      border-color: rgba(98,168,255,0.28);
+    }
+
+    .bubble-wrap {
+      min-width: 0;
+      max-width: 88%;
+    }
+
+    .meta {
+      margin: 0 2px 6px;
+      color: #738096;
+      font-size: 9px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .bubble {
+      position: relative;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      line-height: 1.66;
+      font-size: 13px;
+      word-break: break-word;
+      white-space: normal;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+    }
+
+    .message.user .bubble {
+      background: var(--user);
+      border-color: rgba(98,168,255,0.24);
+      border-top-right-radius: 5px;
+    }
+
+    .message.assistant .bubble {
+      background: var(--assistant);
+      border-top-left-radius: 5px;
+    }
+
+    .bubble pre {
+      margin: 10px 0;
+      padding: 12px;
+      overflow-x: auto;
+      border: 1px solid rgba(148,163,184,0.12);
+      border-radius: 10px;
+      background: rgba(2, 6, 13, 0.66);
+    }
+
+    .bubble code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+    }
+
+    .bubble p + p {
+      margin-top: 9px;
+    }
+
+    .bubble a {
+      color: #8fc0ff;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .bubble ul {
+      margin: 7px 0 7px 18px;
+    }
+
+    .typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 44px;
+    }
+
+    .typing i {
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #a8bddc;
+      animation: dot 1s ease-in-out infinite;
+    }
+
+    .typing i:nth-child(2) { animation-delay: .12s; }
+    .typing i:nth-child(3) { animation-delay: .24s; }
+
+    @keyframes dot {
+      0%, 60%, 100% { transform: translateY(0); opacity: .42; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .stream-caret::after {
+      content: "";
+      display: inline-block;
+      width: 6px;
+      height: 15px;
+      margin-left: 3px;
+      vertical-align: -2px;
+      background: rgba(255,255,255,0.66);
+      animation: caret .75s steps(1) infinite;
+    }
+
+    @keyframes caret {
+      50% { opacity: 0; }
+    }
+
+    .copy-row {
+      display: flex;
+      justify-content: flex-start;
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    .message.user .copy-row {
+      justify-content: flex-end;
+    }
+
+    .copy-btn {
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: #7d8ba1;
+      background: rgba(10,16,26,0.42);
+      font-size: 9px;
+      cursor: pointer;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: var(--line-strong);
+    }
+
+    /* ---------------------------------------------------------
+       COMPOSER
+       --------------------------------------------------------- */
+
+    .composer {
+      position: relative;
+      padding: 12px 18px max(14px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(10,15,24,0.70), rgba(8,12,20,0.92));
+      backdrop-filter: blur(18px);
+    }
+
+    .composer-inner {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .prompt-wrap {
+      position: relative;
+      flex: 1;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      max-height: 180px;
+      resize: none;
+      padding: 13px 48px 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      outline: none;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(16,24,38,0.90), rgba(10,16,27,0.92));
+      line-height: 1.48;
+      font-size: 13px;
+      transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+      scrollbar-width: thin;
+    }
+
+    textarea::placeholder {
+      color: #647188;
+    }
+
+    textarea:focus {
+      border-color: rgba(98,168,255,0.48);
+      box-shadow:
+        0 0 0 3px rgba(98,168,255,0.08),
+        0 12px 34px rgba(0,0,0,0.14);
+      transform: translateY(-1px);
+    }
+
+    .char-count {
+      position: absolute;
+      right: 12px;
+      bottom: 9px;
+      color: #5e6b80;
+      font-size: 8px;
+      pointer-events: none;
+    }
+
+    .send,
+    .stop {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(98,168,255,0.35);
+      border-radius: 14px;
+      color: white;
+      background:
+        linear-gradient(135deg, rgba(98,168,255,0.26), rgba(139,92,255,0.22)),
+        rgba(12,20,34,0.88);
+      box-shadow:
+        inset 0 0 20px rgba(98,168,255,0.05),
+        0 9px 28px rgba(44,80,145,0.16);
+      cursor: pointer;
+      transition:
+        transform .2s ease,
+        filter .2s ease,
+        opacity .2s ease;
+    }
+
+    .send:hover,
+    .stop:hover {
+      transform: translateY(-2px) scale(1.02);
+      filter: brightness(1.10);
+    }
+
+    .send:active,
+    .stop:active {
+      transform: translateY(1px) scale(.98);
+    }
+
+    .send:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .stop {
+      display: none;
+      border-color: rgba(255,95,122,0.38);
+      background:
+        linear-gradient(135deg, rgba(255,95,122,0.20), rgba(139,92,255,0.12)),
+        rgba(12,20,34,0.88);
+    }
+
+    .composer-tools {
+      width: min(900px, 100%);
+      margin: 7px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #69778d;
+      font-size: 9px;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .tool-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 5px 8px;
+      color: #7d8ba1;
+      background: rgba(10,16,26,0.40);
+      cursor: pointer;
+      font-size: 9px;
+    }
+
+    .tool-btn:hover {
+      color: var(--text);
+      border-color: var(--line-strong);
+    }
+
+    /* ---------------------------------------------------------
+       TOAST
+       --------------------------------------------------------- */
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 92px;
+      z-index: 30;
+      transform: translate(-50%, 16px);
+      max-width: min(90vw, 520px);
+      padding: 10px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 11px;
+      color: #d9e6fb;
+      background: rgba(8,13,22,0.92);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      font-size: 11px;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity .25s ease,
+        transform .25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .toast.error {
+      border-color: rgba(255,95,122,0.34);
+      color: #ffc0cb;
+    }
+
+    /* ---------------------------------------------------------
+       DEVTOOLS DETECTION / LOCK OVERLAY
+       --------------------------------------------------------- */
+
+    .guard {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,95,122,0.10), transparent 38%),
+        rgba(4, 6, 10, 0.98);
+      backdrop-filter: blur(20px);
+    }
+
+    .guard.show {
+      display: grid;
+      animation: guardIn .28s ease;
+    }
+
+    @keyframes guardIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .guard-card {
+      width: min(520px, 100%);
+      text-align: center;
+      padding: 28px;
+      border: 1px solid rgba(255,95,122,0.22);
+      border-radius: 20px;
+      background: rgba(13,19,29,0.90);
+      box-shadow: var(--shadow);
+    }
+
+    .guard-card .icon {
+      font-size: 34px;
+      margin-bottom: 12px;
+    }
+
+    .guard-card h3 {
+      font-size: 18px;
+    }
+
+    .guard-card p {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    /* ---------------------------------------------------------
+       RESPONSIVE
+       --------------------------------------------------------- */
+
+    @media (max-width: 760px) {
+      .app {
+        border-inline: 0;
+      }
+
+      .topbar {
+        padding: 12px 12px;
+      }
+
+      .top-status .status-pill span:last-child {
+        display: none;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+        gap: 9px;
+        padding: 10px 12px;
+      }
+
+      .control-row .mini-btn {
+        width: auto;
+      }
+
+      .chat {
+        padding: 18px 12px 20px;
+      }
+
+      .composer {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .bubble-wrap {
+        max-width: 88%;
+      }
+
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .welcome {
+        margin-top: 7vh;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ---------------------------------------------------------
+       GUARD LOCK
+       --------------------------------------------------------- */
+
+    html.guard-locked,
+    html.guard-locked body {
+      overflow: hidden !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scene" aria-hidden="true">
+    <div class="orb a"></div>
+    <div class="orb b"></div>
+    <div class="orb c"></div>
+  </div>
+
+  <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span>✦</span>
+        </div>
+
+        <div class="brand-copy">
+          <h1>HyperAI // OpenRouter</h1>
+          <p>Animated client · Vercel server proxy · vanilla HTML / CSS3 / JavaScript</p>
+        </div>
+      </div>
+
+      <div class="top-status">
+        <div class="status-pill">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">Booting...</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="controls" aria-label="AI controls">
+      <div class="control">
+        <label for="apiKey">Backend status</label>
+        <div class="control-row">
+          <input
+            id="apiKey"
+            class="input"
+            type="text"
+            readonly
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="API key stays server-side">
+          <button id="toggleKey" class="mini-btn" type="button">No Key</button>
+        </div>
+      </div>
+
+      <div class="control">
+        <label for="model">Model</label>
+        <div class="control-row">
+          <input
+            id="model"
+            class="input"
+            value="openrouter/free"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="OpenRouter model ID">
+        </div>
+      </div>
+
+      <div class="control">
+        <label>Session</label>
+        <div class="control-row">
+          <button id="clearBtn" class="mini-btn danger" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="chat-wrap">
+      <main id="chat" class="chat" aria-live="polite">
+        <div id="welcome" class="welcome">
+          <div class="welcome-badge">⚡ LOCAL-FORWARD AI CONSOLE</div>
+          <h2>Push the prompt.<br>Let the model run.</h2>
+          <p>
+            Streaming OpenRouter chat client with a cyber-style animated UI,
+            keyboard handling, session history, and local frontend safeguards.
+          </p>
+
+          <div class="quick-grid">
+            <button class="quick" type="button" data-prompt="Explain how a DHCP server works in a practical TKJ lab.">
+              <strong>Networking</strong>
+              <span>Practical DHCP / LAN explanation</span>
+            </button>
+
+            <button class="quick" type="button" data-prompt="Review this JavaScript architecture and identify bugs, bottlenecks, and cleaner patterns.">
+              <strong>Code Review</strong>
+              <span>Debugging and architecture analysis</span>
+            </button>
+
+            <button class="quick" type="button" data-prompt="Give me a concise but deep explanation of how transformer attention works.">
+              <strong>AI / ML</strong>
+              <span>Technical explanation, no fluff</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <section class="composer">
+      <div class="composer-inner">
+        <div class="prompt-wrap">
+          <textarea
+            id="prompt"
+            rows="1"
+            maxlength="12000"
+            placeholder="Type a prompt...  Enter = send · Shift + Enter = newline"
+            aria-label="Prompt"></textarea>
+
+          <span id="charCount" class="char-count">0 / 12000</span>
+        </div>
+
+        <button id="sendBtn" class="send" type="button" title="Send prompt" aria-label="Send prompt">
+          ➤
+        </button>
+
+        <button id="stopBtn" class="stop" type="button" title="Stop generation" aria-label="Stop generation">
+          ■
+        </button>
+      </div>
+
+      <div class="composer-tools">
+        <div class="tool-group">
+          <button id="copyLastBtn" class="tool-btn" type="button">Copy last</button>
+          <button id="regenBtn" class="tool-btn" type="button">Regenerate</button>
+        </div>
+
+        <div class="tool-group">
+          <span id="modelHint">Model: openrouter/free</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <div id="guard" class="guard" role="dialog" aria-modal="true" aria-live="assertive">
+    <div class="guard-card">
+      <div class="icon">🛡️</div>
+      <h3>Developer tools detected</h3>
+      <p>
+        This frontend uses best-effort browser deterrents for DevTools and Eruda.
+        Client-side code cannot provide real secrecy: anything shipped to a browser
+        can ultimately be inspected.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    /*
+      ==========================================================
+      CONFIG
+      ==========================================================
+
+      IMPORTANT:
+      The API key is intentionally NOT present in this frontend.
+
+      Replace ONLY the placeholder string.
+
+      SECURITY NOTE:
+      A key embedded in browser JavaScript is public to anyone
+      who can access the deployed site. Do NOT reuse a valuable
+      production key for a public deployment.
+
+      Safer production architecture:
+      Browser -> Vercel Function -> OpenRouter
+      with OPENROUTER_API_KEY stored as a server-side environment variable.
+      ==========================================================
+    */
+
+    // API key is NEVER stored in this frontend.
+    // Requests go through /api/chat, where Vercel reads
+    // OPENROUTER_API_KEY from a server-side environment variable.
+
+    const DEFAULT_MODEL = "openrouter/free";
+    const API_URL = "/api/chat";
+
+    const SITE_TITLE = "HyperAI // OpenRouter";
+
+    const SYSTEM_MESSAGE = {
+      role: "system",
+      content:
+        "You are a helpful AI assistant. Be accurate, practical, and concise when appropriate."
+    };
+
+    /* ==========================================================
+       DOM
+       ========================================================== */
+
+    const $ = (selector) => document.querySelector(selector);
+
+    const chat = $("#chat");
+    const welcome = $("#welcome");
+    const promptInput = $("#prompt");
+    const apiKeyInput = $("#apiKey");
+    const modelInput = $("#model");
+    const modelHint = $("#modelHint");
+
+    const sendBtn = $("#sendBtn");
+    const stopBtn = $("#stopBtn");
+    const clearBtn = $("#clearBtn");
+    const copyLastBtn = $("#copyLastBtn");
+    const regenBtn = $("#regenBtn");
+    const toggleKeyBtn = $("#toggleKey");
+
+    const charCount = $("#charCount");
+    const toast = $("#toast");
+
+    const statusDot = $("#statusDot");
+    const statusText = $("#statusText");
+
+    const guard = $("#guard");
+    const cursorGlow = $("#cursorGlow");
+
+    /* ==========================================================
+       STATE
+       ========================================================== */
+
+    let messages = [];
+    let lastUserPrompt = "";
+    let activeController = null;
+    let generating = false;
+    let toastTimer = null;
+
+    /* ==========================================================
+       STARTUP
+       ========================================================== */
+
+    // Deliberately blank: the secret never enters the browser.
+    apiKeyInput.value = "";
+    apiKeyInput.placeholder = "Server-side key configured";
+    modelInput.value = localStorage.getItem("hyperai_model") || DEFAULT_MODEL;
+
+    modelHint.textContent = "Model: " + modelInput.value;
+
+    updateStatus("Ready", "ready");
+    autoResize();
+
+    /* ==========================================================
+       STATUS / TOAST
+       ========================================================== */
+
+    function updateStatus(text, state = "") {
+      statusText.textContent = text;
+      statusDot.className = "status-dot";
+
+      if (state) {
+        statusDot.classList.add(state);
+      }
+    }
+
+    function showToast(message, type = "") {
+      clearTimeout(toastTimer);
+
+      toast.textContent = message;
+      toast.className = "toast show";
+
+      if (type) {
+        toast.classList.add(type);
+      }
+
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
+    /* ==========================================================
+       TEXT / MARKDOWN HELPERS
+       ========================================================== */
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderMarkdown(text) {
+      let safe = escapeHTML(text);
+
+      const codeBlocks = [];
+
+      safe = safe.replace(
+        /```([\s\S]*?)```/g,
+        (_, block) => {
+          const index = codeBlocks.push(block.trim()) - 1;
+          return `@@CODEBLOCK_${index}@@`;
+        }
+      );
+
+      safe = safe.replace(
+        /`([^`]+)`/g,
+        "<code>$1</code>"
+      );
+
+      safe = safe.replace(
+        /\*\*([^*]+)\*\*/g,
+        "<strong>$1</strong>"
+      );
+
+      safe = safe.replace(
+        /\*([^*]+)\*/g,
+        "<em>$1</em>"
+      );
+
+      safe = safe.replace(
+        /(https?:\/\/[^\s<]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+      );
+
+      safe = safe.replace(
+        /^\s*[-*]\s+(.+)$/gm,
+        "<li>$1</li>"
+      );
+
+      safe = safe.replace(
+        /(<li>[\s\S]*?<\/li>)(?:\n|$)/g,
+        "$1"
+      );
+
+      safe = safe.replace(
+        /\n{2,}/g,
+        "</p><p>"
+      );
+
+      safe = "<p>" + safe + "</p>";
+
+      safe = safe.replaceAll(
+        "<p><li>",
+        "<ul><li>"
+      );
+
+      safe = safe.replaceAll(
+        "</li></p>",
+        "</li></ul>"
+      );
+
+      codeBlocks.forEach((block, index) => {
+        const token = `@@CODEBLOCK_${index}@@`;
+        safe = safe.replace(
+          token,
+          `<pre><code>${block}</code></pre>`
+        );
+      });
+
+      safe = safe.replaceAll("<p></p>", "");
+
+      return safe;
+    }
+
+    function createMessage(role, content = "") {
+      if (welcome) {
+        welcome.style.display = "none";
+      }
+
+      const wrapper = document.createElement("article");
+      wrapper.className = `message ${role}`;
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = role === "user" ? "YOU" : "AI";
+
+      const body = document.createElement("div");
+      body.className = "bubble-wrap";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = role === "user" ? "USER" : "OPENROUTER / MODEL";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      if (content) {
+        bubble.innerHTML = renderMarkdown(content);
+      }
+
+      body.appendChild(meta);
+      body.appendChild(bubble);
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(body);
+
+      chat.appendChild(wrapper);
+      scrollToBottom();
+
+      return {
+        wrapper,
+        bubble
+      };
+    }
+
+    function addCopyButton(messageElement, content) {
+      const row = document.createElement("div");
+      row.className = "copy-row";
+
+      const button = document.createElement("button");
+      button.className = "copy-btn";
+      button.type = "button";
+      button.textContent = "Copy";
+
+      button.addEventListener("click", async () => {
+        await copyText(content);
+        button.textContent = "Copied";
+        setTimeout(() => {
+          button.textContent = "Copy";
+        }, 900);
+      });
+
+      row.appendChild(button);
+      messageElement.querySelector(".bubble-wrap").appendChild(row);
+    }
+
+    function addThinkingMessage() {
+      const node = createMessage("assistant");
+
+      node.bubble.innerHTML = `
+        <span class="typing" aria-label="Thinking">
+          <i></i><i></i><i></i>
+        </span>
+      `;
+
+      return node;
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => {
+        chat.scrollTop = chat.scrollHeight;
+      });
+    }
+
+    /* ==========================================================
+       COMPOSER
+       ========================================================== */
+
+    function autoResize() {
+      promptInput.style.height = "auto";
+      promptInput.style.height =
+        Math.min(promptInput.scrollHeight, 180) + "px";
+
+      charCount.textContent =
+        `${promptInput.value.length} / 12000`;
+    }
+
+    promptInput.addEventListener("input", autoResize);
+
+    promptInput.addEventListener("keydown", (event) => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+
+    toggleKeyBtn.addEventListener("click", () => {
+      showToast("API key is server-side and never exposed to this page.");
+    });
+
+    modelInput.addEventListener("input", () => {
+      localStorage.setItem("hyperai_model", modelInput.value.trim());
+      modelHint.textContent =
+        "Model: " + (modelInput.value.trim() || DEFAULT_MODEL);
+    });
+
+    /* ==========================================================
+       REQUEST HELPERS
+       ========================================================== */
+
+    function getModel() {
+      return (
+        modelInput.value.trim() ||
+        DEFAULT_MODEL
+      );
+    }
+
+    function setGeneratingState(value) {
+      generating = value;
+
+      sendBtn.style.display = value ? "none" : "grid";
+      stopBtn.style.display = value ? "grid" : "none";
+
+      promptInput.disabled = value;
+
+      if (value) {
+        updateStatus("Generating", "busy");
+      } else {
+        updateStatus("Ready", "ready");
+      }
+    }
+
+    async function parseOpenRouterStream(response, onDelta) {
+      if (!response.body) {
+        throw new Error("Streaming is not supported by this browser.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        buffer += decoder.decode(value, {
+          stream: true
+        });
+
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+
+        for (const event of events) {
+          const lines = event.split("\n");
+
+          for (const line of lines) {
+            if (!line.startsWith("data:")) {
+              continue;
+            }
+
+            const payload = line.slice(5).trim();
+
+            if (!payload) {
+              continue;
+            }
+
+            if (payload === "[DONE]") {
+              return fullText;
+            }
+
+            let json;
+
+            try {
+              json = JSON.parse(payload);
+            } catch {
+              continue;
+            }
+
+            const delta =
+              json?.choices?.[0]?.delta?.content;
+
+            if (typeof delta === "string" && delta) {
+              fullText += delta;
+              onDelta(delta, fullText);
+            }
+
+            const streamError = json?.error?.message;
+
+            if (streamError) {
+              throw new Error(streamError);
+            }
+          }
+        }
+      }
+
+      return fullText;
+    }
+
+    /* ==========================================================
+       SEND
+       ========================================================== */
+
+    async function sendMessage(customPrompt = null) {
+      if (generating) {
+        return;
+      }
+
+      const model = getModel();
+
+      const prompt =
+        typeof customPrompt === "string"
+          ? customPrompt.trim()
+          : promptInput.value.trim();
+
+      if (!model) {
+        showToast("Model ID is required.", "error");
+        return;
+      }
+
+      if (!prompt) {
+        promptInput.focus();
+        return;
+      }
+
+      lastUserPrompt = prompt;
+
+      messages.push({
+        role: "user",
+        content: prompt
+      });
+
+      createMessage("user", prompt);
+
+      promptInput.value = "";
+      autoResize();
+
+      const thinking = addThinkingMessage();
+      setGeneratingState(true);
+
+      activeController = new AbortController();
+
+      try {
+        const response = await fetch(
+          API_URL,
+          {
+            method: "POST",
+            signal: activeController.signal,
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                SYSTEM_MESSAGE,
+                ...messages
+              ]
+            })
+          }
+        );
+
+        if (!response.ok) {
+          let message = `HTTP ${response.status}`;
+
+          try {
+            const data = await response.json();
+            message =
+              data?.error?.message ||
+              data?.message ||
+              message;
+          } catch {
+            // Keep HTTP status fallback.
+          }
+
+          throw new Error(message);
+        }
+
+        let answer = "";
+
+        thinking.bubble.classList.add("stream-caret");
+
+        answer = await parseOpenRouterStream(
+          response,
+          (_delta, full) => {
+            thinking.bubble.innerHTML =
+              renderMarkdown(full);
+            scrollToBottom();
+          }
+        );
+
+        thinking.bubble.classList.remove("stream-caret");
+
+        if (!answer.trim()) {
+          throw new Error(
+            "The model returned an empty response."
+          );
+        }
+
+        messages.push({
+          role: "assistant",
+          content: answer
+        });
+
+        addCopyButton(
+          thinking.wrapper,
+          answer
+        );
+
+        updateStatus("Ready", "ready");
+
+      } catch (error) {
+        thinking.bubble.classList.remove("stream-caret");
+
+        if (error?.name === "AbortError") {
+          thinking.bubble.innerHTML =
+            "<p>Generation stopped.</p>";
+          updateStatus("Stopped", "ready");
+        } else {
+          thinking.bubble.innerHTML =
+            `<p><strong>Request failed:</strong> ${escapeHTML(
+              error?.message || "Unknown error"
+            )}</p>`;
+
+          updateStatus("Request failed", "error");
+          showToast(
+            error?.message || "Request failed",
+            "error"
+          );
+        }
+      } finally {
+        activeController = null;
+        setGeneratingState(false);
+      }
+    }
+
+    sendBtn.addEventListener("click", () => {
+      sendMessage();
+    });
+
+    stopBtn.addEventListener("click", () => {
+      activeController?.abort();
+    });
+
+    /* ==========================================================
+       SESSION
+       ========================================================== */
+
+    clearBtn.addEventListener("click", () => {
+      activeController?.abort();
+
+      messages = [];
+      lastUserPrompt = "";
+
+      chat.innerHTML = "";
+      chat.appendChild(welcome);
+      welcome.style.display = "";
+
+      setGeneratingState(false);
+      showToast("Conversation cleared.");
+    });
+
+    regenBtn.addEventListener("click", () => {
+      if (!lastUserPrompt) {
+        showToast("Nothing to regenerate yet.");
+        return;
+      }
+
+      const previous = messages[messages.length - 1];
+
+      if (
+        previous?.role === "user" &&
+        previous.content === lastUserPrompt
+      ) {
+        messages.pop();
+      }
+
+      sendMessage(lastUserPrompt);
+    });
+
+    copyLastBtn.addEventListener("click", async () => {
+      const lastAssistant = [...messages]
+        .reverse()
+        .find(
+          (message) =>
+            message.role === "assistant"
+        );
+
+      if (!lastAssistant) {
+        showToast("No assistant response yet.");
+        return;
+      }
+
+      await copyText(
+        lastAssistant.content
+      );
+
+      showToast("Last response copied.");
+    });
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+    }
+
+    /* ==========================================================
+       QUICK PROMPTS
+       ========================================================== */
+
+    document.querySelectorAll("[data-prompt]").forEach((button) => {
+      button.addEventListener("click", () => {
+        promptInput.value =
+          button.dataset.prompt || "";
+
+        autoResize();
+        promptInput.focus();
+      });
+    });
+
+    /* ==========================================================
+       CURSOR GLOW
+       ========================================================== */
+
+    window.addEventListener("pointermove", (event) => {
+      cursorGlow.style.left = event.clientX + "px";
+      cursorGlow.style.top = event.clientY + "px";
+    }, { passive: true });
+
+    /* ==========================================================
+       BEST-EFFORT FRONTEND DEVTOOLS / ERUDA DETERRENTS
+       ==========================================================
+
+       These are intentionally non-destructive:
+       - block common shortcuts
+       - block context menu
+       - detect common Eruda globals/classes
+       - detect large DevTools window changes
+
+       They do NOT make frontend code secret or secure.
+       ========================================================== */
+
+    function isErudaDetected() {
+      const globalEruda =
+        typeof window.eruda !== "undefined";
+
+      const erudaDom =
+        !!document.querySelector(
+          ".eruda-dev-tools, .eruda-entry-btn"
+        );
+
+      return globalEruda || erudaDom;
+    }
+
+    function setGuard(show, reason = "") {
+      if (show) {
+        document.documentElement.classList.add(
+          "guard-locked"
+        );
+
+        guard.classList.add("show");
+
+        if (reason) {
+          console.warn(
+            "[HyperAI guard]",
+            reason
+          );
+        }
+      } else {
+        document.documentElement.classList.remove(
+          "guard-locked"
+        );
+
+        guard.classList.remove("show");
+      }
+    }
+
+    document.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      showToast("Context menu disabled.");
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.toLowerCase();
+
+      const blocked =
+        key === "f12" ||
+        (
+          event.ctrlKey &&
+          event.shiftKey &&
+          ["i", "j", "c"].includes(key)
+        ) ||
+        (
+          event.ctrlKey &&
+          ["u", "s"].includes(key)
+        ) ||
+        (
+          event.metaKey &&
+          event.altKey &&
+          ["i", "j", "c"].includes(key)
+        );
+
+      if (blocked) {
+        event.preventDefault();
+        event.stopPropagation();
+        showToast("Developer shortcut blocked.");
+      }
+    }, true);
+
+    let devtoolsPreviouslyOpen = false;
+
+    function detectDevTools() {
+      const widthDelta =
+        Math.abs(window.outerWidth - window.innerWidth);
+
+      const heightDelta =
+        Math.abs(window.outerHeight - window.innerHeight);
+
+      const likelyOpen =
+        widthDelta > 220 ||
+        heightDelta > 220 ||
+        isErudaDetected();
+
+      if (likelyOpen && !devtoolsPreviouslyOpen) {
+        setGuard(
+          true,
+          "DevTools / Eruda heuristic triggered."
+        );
+      }
+
+      if (!likelyOpen && devtoolsPreviouslyOpen) {
+        setGuard(false);
+      }
+
+      devtoolsPreviouslyOpen = likelyOpen;
+    }
+
+    setInterval(detectDevTools, 1100);
+
+    window.addEventListener("resize", detectDevTools);
+
+    /* ==========================================================
+       TAB VISIBILITY / ACTIVITY
+       ========================================================== */
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && generating) {
+        updateStatus("Running in background", "busy");
+      } else if (!generating) {
+        updateStatus("Ready", "ready");
+      }
+    });
+
+    /* ==========================================================
+       INITIAL FOCUS
+       ========================================================== */
+
+    setTimeout(() => {
+      promptInput.focus();
+    }, 350);
+  </script>
+</body>
+</html>
