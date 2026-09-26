@@ -24,9 +24,9 @@
       --cyan: #42e8ff;
       --danger: #ff5f7a;
       --success: #45e0a0;
-      --user: linear-gradient(135deg, rgba(54, 104, 180, 0.28), rgba(98, 168, 255, 0.10));
-      --assistant: linear-gradient(135deg, rgba(28, 38, 58, 0.76), rgba(16, 22, 35, 0.82));
-      --shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+      --user: linear-gradient(135deg, rgba(54, 104, 180, 0.35), rgba(98, 168, 255, 0.15));
+      --assistant: linear-gradient(135deg, rgba(28, 38, 58, 0.8), rgba(16, 22, 35, 0.85));
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
       --radius: 18px;
     }
 
@@ -36,29 +36,23 @@
       padding: 0;
     }
 
-    html,
-    body {
+    html, body {
       width: 100%;
       min-height: 100%;
       background: var(--bg-0);
+      overflow: hidden;
     }
 
     body {
       min-height: 100vh;
       min-height: 100dvh;
-      overflow: hidden;
       color: var(--text);
-      font-family:
-        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
     }
 
-    button,
-    input,
-    textarea,
-    select {
+    button, input, textarea, select {
       font: inherit;
     }
 
@@ -67,7 +61,7 @@
     }
 
     /* ---------------------------------------------------------
-       BACKGROUND ANIMATION
+       BACKGROUND ANIMATION (DYNAMIC ORBS & GRID)
        --------------------------------------------------------- */
 
     .scene {
@@ -76,10 +70,11 @@
       overflow: hidden;
       pointer-events: none;
       background:
-        radial-gradient(circle at 18% 15%, rgba(98, 168, 255, 0.09), transparent 28%),
-        radial-gradient(circle at 82% 17%, rgba(139, 92, 255, 0.11), transparent 28%),
-        radial-gradient(circle at 50% 92%, rgba(66, 232, 255, 0.07), transparent 34%),
+        radial-gradient(circle at 18% 15%, rgba(98, 168, 255, 0.12), transparent 30%),
+        radial-gradient(circle at 82% 17%, rgba(139, 92, 255, 0.14), transparent 30%),
+        radial-gradient(circle at 50% 92%, rgba(66, 232, 255, 0.09), transparent 35%),
         linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      z-index: 0;
     }
 
     .scene::before {
@@ -87,47 +82,39 @@
       position: absolute;
       inset: -45%;
       background:
-        linear-gradient(
-          transparent 49.5%,
-          rgba(98, 168, 255, 0.045) 50%,
-          transparent 50.5%
-        ),
-        linear-gradient(
-          90deg,
-          transparent 49.5%,
-          rgba(98, 168, 255, 0.035) 50%,
-          transparent 50.5%
-        );
+        linear-gradient(transparent 49.5%, rgba(98, 168, 255, 0.06) 50%, transparent 50.5%),
+        linear-gradient(90deg, transparent 49.5%, rgba(98, 168, 255, 0.04) 50%, transparent 50.5%);
       background-size: 64px 64px;
       transform: perspective(600px) rotateX(67deg) translateY(18%);
       transform-origin: center bottom;
-      animation: gridDrift 18s linear infinite;
+      animation: gridDrift 15s linear infinite;
     }
 
     .orb {
       position: absolute;
-      width: 42vw;
+      width: 45vw;
       aspect-ratio: 1;
       border-radius: 50%;
-      filter: blur(70px);
-      opacity: 0.16;
-      animation: orbit 16s ease-in-out infinite;
+      filter: blur(80px);
+      opacity: 0.2;
+      animation: orbitPulse 12s ease-in-out infinite;
     }
 
-    .orb.a { top: -24vw; left: -12vw; background: #2d7fff; }
-    .orb.b { top: 10vh; right: -20vw; background: #8b3dff; animation-delay: -5s; }
-    .orb.c { bottom: -28vw; left: 34vw; background: #00c8ff; animation-delay: -10s; }
+    .orb.a { top: -20vw; left: -10vw; background: #2d7fff; animation-delay: 0s; }
+    .orb.b { top: 15vh; right: -15vw; background: #8b3dff; animation-delay: -4s; }
+    .orb.c { bottom: -25vw; left: 30vw; background: #00c8ff; animation-delay: -8s; }
 
     .cursor-glow {
       position: fixed;
-      width: 240px;
-      height: 240px;
+      width: 300px;
+      height: 300px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(98, 168, 255, 0.10), transparent 68%);
+      background: radial-gradient(circle, rgba(98, 168, 255, 0.12), transparent 70%);
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 1;
-      filter: blur(4px);
+      filter: blur(8px);
+      transition: width 0.3s, height 0.3s;
     }
 
     @keyframes gridDrift {
@@ -135,13 +122,116 @@
       to   { transform: perspective(600px) rotateX(67deg) translateY(18%) translateY(64px); }
     }
 
-    @keyframes orbit {
-      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-      50% { transform: translate3d(4vw, 5vh, 0) scale(1.08); }
+    @keyframes orbitPulse {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.15; }
+      50% { transform: translate3d(3vw, 4vh, 0) scale(1.15); opacity: 0.25; }
     }
 
     /* ---------------------------------------------------------
-       APP SHELL & GUI
+       WELCOME OVERLAY MODAL (FULL ANIMATED ENTRANCE)
+       --------------------------------------------------------- */
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(4, 7, 12, 0.85);
+      backdrop-filter: blur(22px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      animation: modalFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(22px); }
+    }
+
+    .modal-box {
+      width: min(600px, 100%);
+      max-height: 85vh;
+      background: rgba(13, 19, 29, 0.96);
+      border: 1px solid rgba(98, 168, 255, 0.4);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 30px rgba(98,168,255,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalPopup 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes modalPopup {
+      from { opacity: 0; transform: scale(0.8) translateY(30px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      font-size: 16px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: glowText 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes glowText {
+      from { text-shadow: 0 0 5px rgba(98,168,255,0.2); }
+      to { text-shadow: 0 0 15px rgba(98,168,255,0.6); }
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #cbd5e1;
+      padding-right: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148,163,184,0.2) transparent;
+    }
+
+    .modal-body p, .modal-body ul { margin-bottom: 12px; }
+    .modal-body ul { padding-left: 18px; }
+    .modal-body a { color: var(--accent); text-decoration: underline; transition: color 0.2s; }
+    .modal-body a:hover { color: var(--cyan); }
+
+    .modal-footer {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .modal-btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(57, 255, 20, 0.5);
+      background: linear-gradient(135deg, rgba(57, 255, 20, 0.25), rgba(98, 168, 255, 0.2));
+      color: #39ff14;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+    }
+
+    .modal-btn:hover {
+      background: #39ff14;
+      color: #05070b;
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 8px 25px rgba(57, 255, 20, 0.4);
+    }
+
+    /* ---------------------------------------------------------
+       APP SHELL & TOPBAR
        --------------------------------------------------------- */
 
     .app {
@@ -153,10 +243,16 @@
       margin: 0 auto;
       display: grid;
       grid-template-rows: auto auto 1fr auto;
-      background: rgba(4, 7, 12, 0.46);
-      border-inline: 1px solid rgba(255,255,255,0.04);
+      background: rgba(4, 7, 12, 0.5);
+      border-inline: 1px solid rgba(255,255,255,0.06);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(20px);
+      animation: appLoad 0.8s ease forwards;
+    }
+
+    @keyframes appLoad {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .topbar {
@@ -167,8 +263,7 @@
       gap: 18px;
       padding: 15px 18px;
       border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(12,17,28,0.92), rgba(8,12,20,0.74));
-      backdrop-filter: blur(18px);
+      background: linear-gradient(180deg, rgba(12,17,28,0.95), rgba(8,12,20,0.8));
     }
 
     .brand {
@@ -185,11 +280,17 @@
       flex: 0 0 42px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(98,168,255,0.28);
+      border: 1px solid rgba(98,168,255,0.35);
       border-radius: 14px;
-      background: radial-gradient(circle at 35% 30%, rgba(98,168,255,0.30), transparent 46%), rgba(12, 20, 34, 0.86);
-      box-shadow: inset 0 0 24px rgba(98,168,255,0.08), 0 0 24px rgba(98,168,255,0.06);
+      background: radial-gradient(circle at 35% 30%, rgba(98,168,255,0.35), transparent 46%), rgba(12, 20, 34, 0.9);
+      box-shadow: inset 0 0 24px rgba(98,168,255,0.1), 0 0 20px rgba(98,168,255,0.1);
       overflow: hidden;
+      animation: iconGlow 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes iconGlow {
+      from { box-shadow: inset 0 0 15px rgba(98,168,255,0.1), 0 0 10px rgba(98,168,255,0.1); }
+      to { box-shadow: inset 0 0 25px rgba(139,92,255,0.3), 0 0 25px rgba(139,92,255,0.3); }
     }
 
     .brand-copy h1 {
@@ -197,14 +298,12 @@
       line-height: 1.1;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      white-space: nowrap;
     }
 
     .brand-copy p {
       margin-top: 4px;
       font-size: 11px;
       color: var(--muted);
-      white-space: nowrap;
     }
 
     .top-status {
@@ -222,7 +321,7 @@
       padding: 7px 12px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      background: rgba(8, 13, 22, 0.58);
+      background: rgba(8, 13, 22, 0.65);
     }
 
     .status-dot {
@@ -230,17 +329,20 @@
       height: 7px;
       border-radius: 50%;
       background: #64748b;
-      transition: 0.25s ease;
+      transition: 0.3s ease;
     }
 
-    .status-dot.ready { background: var(--success); box-shadow: 0 0 12px rgba(69, 224, 160, 0.72); }
-    .status-dot.busy { background: var(--accent); box-shadow: 0 0 12px rgba(98, 168, 255, 0.72); animation: pulse 1s infinite; }
-    .status-dot.error { background: var(--danger); box-shadow: 0 0 12px rgba(255, 95, 122, 0.72); }
+    .status-dot.ready { background: var(--success); box-shadow: 0 0 14px rgba(69, 224, 160, 0.8); }
+    .status-dot.busy { background: var(--accent); box-shadow: 0 0 14px rgba(98, 168, 255, 0.8); animation: pulseGlow 1s infinite alternate; }
+    .status-dot.error { background: var(--danger); box-shadow: 0 0 14px rgba(255, 95, 122, 0.8); }
 
-    @keyframes pulse { 50% { transform: scale(1.4); opacity: 0.6; } }
+    @keyframes pulseGlow {
+      0% { transform: scale(1); opacity: 0.7; }
+      100% { transform: scale(1.5); opacity: 1; }
+    }
 
     /* ---------------------------------------------------------
-       USER-FRIENDLY CONTROLS (AWAM-FRIENDLY GUI)
+       CONTROLS BAR
        --------------------------------------------------------- */
 
     .controls {
@@ -249,7 +351,7 @@
       gap: 12px;
       padding: 12px 18px;
       border-bottom: 1px solid var(--line);
-      background: rgba(9, 14, 23, 0.60);
+      background: rgba(9, 14, 23, 0.65);
     }
 
     .control label {
@@ -270,27 +372,29 @@
       border-radius: 12px;
       outline: none;
       color: var(--text);
-      background: linear-gradient(180deg, rgba(16, 24, 38, 0.9), rgba(10, 16, 27, 0.9));
+      background: linear-gradient(180deg, rgba(16, 24, 38, 0.95), rgba(10, 16, 27, 0.95));
       cursor: pointer;
-      transition: 0.2s;
+      transition: all 0.25s ease;
     }
 
     .select:hover, .mini-btn:hover {
-      border-color: rgba(98,168,255,0.4);
+      border-color: rgba(98,168,255,0.5);
+      transform: translateY(-1px);
     }
 
     .mini-btn.primary {
-      background: linear-gradient(135deg, rgba(98,168,255,0.25), rgba(139,92,255,0.2));
-      border-color: rgba(98,168,255,0.5);
+      background: linear-gradient(135deg, rgba(98,168,255,0.3), rgba(139,92,255,0.25));
+      border-color: rgba(98,168,255,0.6);
+      box-shadow: 0 0 15px rgba(98,168,255,0.15);
     }
 
     .mini-btn.danger {
       color: #ffb4c2;
-      border-color: rgba(255,95,122,0.3);
+      border-color: rgba(255,95,122,0.4);
     }
 
     /* ---------------------------------------------------------
-       CHAT INTERFACE
+       CHAT INTERFACE & MESSAGES ANIMATION
        --------------------------------------------------------- */
 
     .chat-wrap {
@@ -304,38 +408,47 @@
       overflow-y: auto;
       scroll-behavior: smooth;
       padding: 28px 18px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(148,163,184,0.2) transparent;
     }
 
     .welcome {
       width: min(720px, 100%);
       margin: 10vh auto 0;
       text-align: center;
-      animation: fadeIn 0.8s ease;
+      animation: welcomeFloat 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes welcomeFloat {
+      from { opacity: 0; transform: translateY(25px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .welcome-badge {
       display: inline-flex;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border-radius: 999px;
       color: #bfd7ff;
-      background: rgba(11,18,31,0.8);
+      background: rgba(11,18,31,0.85);
       border: 1px solid var(--line);
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.12em;
+      box-shadow: inset 0 0 15px rgba(98,168,255,0.1);
     }
 
     .welcome h2 {
       margin-top: 15px;
       font-size: clamp(26px, 4vw, 44px);
-      background: linear-gradient(90deg, #ffffff, #a9ccff, #d0bbff);
+      background: linear-gradient(90deg, #ffffff, #a9ccff, #d0bbff, #ffffff);
+      background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      animation: gradientShift 6s linear infinite;
+    }
+
+    @keyframes gradientShift {
+      to { background-position: 200% center; }
     }
 
     .welcome p {
@@ -348,70 +461,97 @@
     .quick-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 20px;
+      gap: 12px;
+      margin-top: 22px;
     }
 
     .quick {
-      padding: 12px;
+      padding: 14px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(10, 16, 27, 0.6);
+      border-radius: 14px;
+      background: rgba(10, 16, 27, 0.7);
       color: var(--text);
       cursor: pointer;
       text-align: left;
-      transition: 0.2s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .quick:hover {
-      transform: translateY(-3px);
-      border-color: rgba(98,168,255,0.4);
-      background: rgba(16,24,39,0.8);
+      transform: translateY(-5px) scale(1.02);
+      border-color: rgba(98,168,255,0.5);
+      background: rgba(16,24,39,0.9);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 15px rgba(98,168,255,0.15);
     }
 
-    .quick strong { display: block; font-size: 11px; margin-bottom: 3px; }
-    .quick span { color: var(--muted); font-size: 10px; }
+    .quick strong { display: block; font-size: 11px; margin-bottom: 4px; color: var(--text); }
+    .quick span { color: var(--muted); font-size: 10px; line-height: 1.4; }
 
     .message {
       width: min(900px, 100%);
-      margin: 0 auto 18px;
+      margin: 0 auto 20px;
       display: flex;
-      gap: 10px;
-      animation: msgIn 0.3s ease;
+      gap: 12px;
+      animation: messageSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes messageSlideIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     .message.user { flex-direction: row-reverse; }
 
     .avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
       display: grid;
       place-items: center;
-      background: rgba(16, 24, 39, 0.9);
+      background: rgba(16, 24, 39, 0.95);
       border: 1px solid var(--line);
       font-size: 11px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
 
     .bubble-wrap { max-width: 85%; }
-    .meta { font-size: 9px; color: #738096; margin-bottom: 4px; text-transform: uppercase; }
+    .meta { font-size: 9px; color: #738096; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
 
     .bubble {
-      padding: 12px 16px;
-      border-radius: 14px;
+      padding: 14px 18px;
+      border-radius: 16px;
       font-size: 13px;
-      line-height: 1.6;
+      line-height: 1.65;
       border: 1px solid var(--line);
       word-break: break-word;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+      animation: bubblePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .message.user .bubble { background: var(--user); border-color: rgba(98,168,255,0.25); border-top-right-radius: 4px; }
+    @keyframes bubblePop {
+      from { transform: scale(0.95); }
+      to { transform: scale(1); }
+    }
+
+    .message.user .bubble { background: var(--user); border-color: rgba(98,168,255,0.3); border-top-right-radius: 4px; }
     .message.assistant .bubble { background: var(--assistant); border-top-left-radius: 4px; }
 
-    .bubble pre { margin: 8px 0; padding: 10px; background: rgba(2,6,13,0.7); border-radius: 8px; overflow-x: auto; }
-    .bubble code { font-family: monospace; font-size: 11px; }
+    .bubble pre { margin: 10px 0; padding: 12px; background: rgba(2,6,13,0.8); border-radius: 10px; overflow-x: auto; border: 1px solid rgba(148,163,184,0.15); }
+    .bubble code { font-family: ui-monospace, monospace; font-size: 11px; }
+
+    /* Typing Dots Animation */
+    .typing { display: inline-flex; align-items: center; gap: 5px; min-height: 20px; }
+    .typing i {
+      display: block; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); animation: typingBounce 1s infinite ease-in-out;
+    }
+    .typing i:nth-child(2) { animation-delay: 0.2s; }
+    .typing i:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
 
     /* ---------------------------------------------------------
        COMPOSER (INPUT BAWAH)
@@ -420,8 +560,8 @@
     .composer {
       padding: 12px 18px max(14px, env(safe-area-inset-bottom));
       border-top: 1px solid var(--line);
-      background: rgba(10,15,24,0.85);
-      backdrop-filter: blur(18px);
+      background: rgba(10,15,24,0.9);
+      backdrop-filter: blur(20px);
     }
 
     .composer-inner {
@@ -439,37 +579,49 @@
       min-height: 48px;
       max-height: 160px;
       resize: none;
-      padding: 12px 45px 12px 14px;
+      padding: 13px 48px 13px 15px;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 16px;
       outline: none;
       color: var(--text);
-      background: rgba(16,24,38,0.9);
+      background: rgba(16,24,38,0.95);
       font-size: 13px;
-      line-height: 1.45;
+      line-height: 1.5;
+      transition: all 0.25s ease;
     }
 
-    textarea:focus { border-color: rgba(98,168,255,0.5); box-shadow: 0 0 0 3px rgba(98,168,255,0.08); }
+    textarea:focus {
+      border-color: rgba(98,168,255,0.6);
+      box-shadow: 0 0 0 3px rgba(98,168,255,0.12), 0 10px 30px rgba(0,0,0,0.3);
+      transform: translateY(-1px);
+    }
 
-    .char-count { position: absolute; right: 12px; bottom: 8px; font-size: 8px; color: var(--muted); }
+    .char-count { position: absolute; right: 14px; bottom: 10px; font-size: 8px; color: var(--muted); pointer-events: none; }
 
     .send, .stop {
       width: 48px; height: 48px;
       border-radius: 14px;
       border: 1px solid rgba(98,168,255,0.4);
-      background: linear-gradient(135deg, rgba(98,168,255,0.3), rgba(139,92,255,0.25));
+      background: linear-gradient(135deg, rgba(98,168,255,0.35), rgba(139,92,255,0.3));
       color: white;
       cursor: pointer;
       display: grid; place-items: center;
-      transition: 0.2s;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 6px 20px rgba(44,80,145,0.2);
     }
 
-    .send:hover { transform: scale(1.03); }
-    .stop { display: none; background: linear-gradient(135deg, rgba(255,95,122,0.3), rgba(139,92,255,0.2)); border-color: rgba(255,95,122,0.4); }
+    .send:hover { transform: translateY(-2px) scale(1.05); filter: brightness(1.15); box-shadow: 0 8px 25px rgba(98,168,255,0.3); }
+    .send:active { transform: translateY(1px) scale(0.95); }
+
+    .stop {
+      display: none;
+      background: linear-gradient(135deg, rgba(255,95,122,0.3), rgba(139,92,255,0.25));
+      border-color: rgba(255,95,122,0.5);
+    }
 
     .composer-tools {
       width: min(900px, 100%);
-      margin: 6px auto 0;
+      margin: 8px auto 0;
       display: flex;
       justify-content: space-between;
       color: var(--muted);
@@ -477,24 +629,27 @@
     }
 
     .tool-btn {
-      background: rgba(10,16,26,0.5);
+      background: rgba(10,16,26,0.6);
       border: 1px solid var(--line);
-      border-radius: 7px;
-      padding: 4px 8px;
+      border-radius: 8px;
+      padding: 5px 10px;
       color: #8fa1b8;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .tool-btn:hover { color: var(--text); border-color: var(--line-strong); }
+    .tool-btn:hover { color: var(--text); border-color: var(--line-strong); transform: translateY(-1px); }
 
-    /* TOAST NOTIFICATION */
+    /* TOAST ANIMATED NOTIFICATION */
     .toast {
-      position: fixed; left: 50%; bottom: 85px; z-index: 50;
-      transform: translate(-50%, 15px);
-      padding: 8px 14px; border-radius: 10px;
-      background: rgba(8,13,22,0.95);
+      position: fixed; left: 50%; bottom: 90px; z-index: 50;
+      transform: translate(-50%, 25px);
+      padding: 9px 16px; border-radius: 12px;
+      background: rgba(8,13,22,0.96);
       border: 1px solid var(--line-strong);
       color: #d9e6fb; font-size: 11px;
-      opacity: 0; pointer-events: none; transition: 0.25s ease;
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -507,6 +662,56 @@
 </head>
 
 <body>
+  <!-- WELCOME MODAL OVERLAY -->
+  <div id="welcomeModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>⚡ INFORMASI & KETENTUAN HYPERAI</h2>
+      </div>
+      <div class="modal-body">
+        <p><strong>SELAMAT DATANG DI HyperAI</strong>, Buatan Oleh HyperGaruda. AI Chatbot ini Menggunakan sistem Agregator OpenRouter dan Telah Dihardcoded untuk free saja. Disini tidak ada Meminta Pembayaran Sama sekali ataupun Langganan.</p>
+        
+        <p><strong>Aturan Hanya 3:</strong></p>
+        <ul>
+          <li>1. Share jika Berguna</li>
+          <li>2. Jika ada kekurangan silahkan Feedback dengan baik</li>
+          <li>3. <strong>DILARANG KERAS MENGGUNAKAN WEB INI SEBAGAI TEMPAT TES DDoS</strong>, Terlalu Bangga kah sampe menggunakan web orang buat main begituan? Goblok iya untung kaga</li>
+        </ul>
+
+        <p><strong>Sosmed:</strong><br>
+        <a href="https://www.instagram.com/muhamad_farhannn_" target="_blank">Instagram</a><br>
+        <a href="https://v.douyin.com/P0Qx2tl0KSA/" target="_blank">Douyin</a></p>
+
+        <p><strong>Projek Thingies:</strong><br>
+        <a href="https://github.com/Hanzet22" target="_blank">GitHub</a><br>
+        <a href="https://www.behance.net/farhanzet_22" target="_blank">Behance</a></p>
+
+        <p><strong>Contact:</strong><br>
+        Email: farhanzet4@gmail.com (Slow)<br>
+        Telegram: @Hypergaruda (Mid)<br>
+        Whatsapp: <a href="https://wa.me/6285272995674" target="_blank">wa.me/6285272995674</a> (Fast)</p>
+
+        <p><strong>Private DM:</strong><br>
+        Discord: hgi.id</p>
+
+        <p><strong>Collaboration atau apapun itu:</strong><br>
+        Email: hypergarudatkj@gmail.com<br>
+        Telegram: @Hypergaruda<br>
+        Discord: hgi_official<br>
+        WhatsApp: <a href="https://wa.me/6285272995674" target="_blank">wa.me/6285272995674</a></p>
+
+        <p><strong>Donasi Jika ikhlas:</strong><br>
+        Mendukung DANA dan GOPAY<br>
+        085272995674</p>
+
+        <p>Terimakasih banyak dan Selamat Menggunakan!</p>
+      </div>
+      <div class="modal-footer">
+        <button id="closeModalBtn" class="modal-btn" type="button">> MENGERTI, LANJUT MASUK!</button>
+      </div>
+    </div>
+  </div>
+
   <div class="scene" aria-hidden="true">
     <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
   </div>
@@ -529,7 +734,6 @@
       </div>
     </header>
 
-    <!-- GUI RAMAH ORANG AWAM (DENGAN 5 LEVEL THINKING & SEARCH TOGGLE) -->
     <section class="controls">
       <div class="control">
         <label for="thinkingLevel">🧠 Mode Berpikir AI</label>
@@ -617,8 +821,27 @@
     const copyLastBtn = $("#copyLastBtn"), regenBtn = $("#regenBtn");
     const thinkingSelect = $("#thinkingLevel"), searchToggleBtn = $("#searchToggleBtn");
     const charCount = $("#charCount"), toast = $("#toast"), statusDot = $("#statusDot"), statusText = $("#statusText");
+    const welcomeModal = $("#welcomeModal"), closeModalBtn = $("#closeModalBtn");
+    const cursorGlow = $("#cursorGlow");
 
     let messages = [], lastUserPrompt = "", activeController = null, generating = false, searchEnabled = false, toastTimer = null;
+
+    // Smooth Cursor Glow Animation Tracking via JS
+    window.addEventListener("pointermove", (e) => {
+      cursorGlow.style.left = e.clientX + "px";
+      cursorGlow.style.top = e.clientY + "px";
+    }, { passive: true });
+
+    // Tutup Modal Overlay Welcome dengan Animasi Keluar
+    closeModalBtn.addEventListener("click", () => {
+      welcomeModal.style.transition = "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)";
+      welcomeModal.style.opacity = "0";
+      welcomeModal.style.transform = "scale(1.05)";
+      setTimeout(() => {
+        welcomeModal.remove();
+        promptInput.focus();
+      }, 400);
+    });
 
     function updateStatus(text, state = "") {
       statusText.textContent = text;
@@ -629,10 +852,9 @@
       clearTimeout(toastTimer);
       toast.textContent = msg;
       toast.classList.add("show");
-      toastTimer = setTimeout(() => toast.classList.remove("show"), 2300);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2500);
     }
 
-    // Toggle Web Search Awom-friendly
     searchToggleBtn.addEventListener("click", () => {
       searchEnabled = !searchEnabled;
       searchToggleBtn.textContent = searchEnabled ? "🌐 Cari di Web: AKTIF" : "🌐 Cari di Web: MATI";
@@ -790,7 +1012,6 @@
     });
 
     updateStatus("Siap", "ready");
-    setTimeout(() => promptInput.focus(), 300);
   </script>
 </body>
 </html>
