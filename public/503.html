@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a12">
+  <title>503 // SERVICE UNAVAILABLE</title>
+  <style>
+    :root {
+      --bg-0: #05070b;
+      --panel: rgba(17, 24, 39, 0.82);
+      --line: rgba(98, 168, 255, 0.3);
+      --text: #eef4ff;
+      --muted: #8c99ad;
+      --accent: #62a8ff;
+      --danger: #ff5f7a;
+      --success: #39ff14;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-0);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background Direct MP4 Video Styling */
+    .video-bg {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    .video-bg video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      width: min(540px, 90%);
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(98, 168, 255, 0.05);
+      backdrop-filter: blur(14px);
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .error-code {
+      font-size: clamp(3rem, 8vw, 4.5rem);
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 20px rgba(98, 168, 255, 0.5);
+      margin-bottom: 5px;
+      animation: glitch 2s infinite;
+    }
+
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      color: #ffcc00;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 15px;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .highlight {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .sound-btn {
+      margin: 12px 0;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--accent);
+      border-radius: 11px;
+      background: rgba(98, 168, 255, 0.15);
+      color: var(--accent);
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .sound-btn:hover {
+      background: var(--accent);
+      color: #05070b;
+    }
+
+    .back-btn {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--success);
+      border-radius: 11px;
+      background: rgba(57, 255, 20, 0.1);
+      color: var(--success);
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: 0.2s ease;
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+      margin-top: 5px;
+    }
+
+    .back-btn:hover {
+      background: var(--success);
+      color: #05070b;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(57, 255, 20, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Direct MP4 Video from Catbox -->
+  <div class="video-bg">
+    <video id="bgVideo" autoplay muted loop playsinline>
+      <source src="https://files.catbox.moe/vz0vsb.mp4" type="video/mp4">
+      Browser lu gak support tag video, Bre!
+    </video>
+  </div>
+
+  <div class="container">
+    <div class="error-code">503</div>
+    <h2>⚡ SERVICE UNAVAILABLE ⚡</h2>
+    <p>Server-nya lagi kecapean abis kerja lembur bagai kuda, Bre! 💀</p>
+    <p>Status <span class="highlight">503 Service Unavailable</span>. Sistem HyperAI lagi istirahat total.</p>
+    
+    <!-- Tombol Suara khusus video MP4 -->
+    <button id="soundBtn" class="sound-btn" onclick="enableSound()">🔊 KLIK UNTUK NYALAKAN SUARA</button>
+
+    <a href="/" class="back-btn">> KEMBALI KE JALUR YANG BENAR</a>
+  </div>
+
+  <script>
+    function enableSound() {
+      const video = document.getElementById('bgVideo');
+      video.muted = false;
+      video.play();
+      document.getElementById('soundBtn').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
