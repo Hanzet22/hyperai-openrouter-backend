@@ -70,7 +70,8 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: "Request body is required." });
   }
 
-  const { model, messages } = body;
+  // Tangkap parameter baru: thinkingLevel dan enableSearch dari frontend
+  const { model, messages, thinkingLevel, enableSearch } = body;
 
   if (
     typeof model !== "string" ||
@@ -103,6 +104,31 @@ export default async function handler(req, res) {
 
   const normalizedMessages = [systemInstruction, ...userMessages];
 
+  // Susun payload dasar OpenRouter
+  const payload = {
+    model: model.trim(),
+    messages: normalizedMessages,
+    stream: true
+  };
+
+  // Mekanisme 5 Tipe Thinking (Mapping budget token penalaran)
+  if (thinkingLevel && thinkingLevel !== "off") {
+    let budgetTokens = 1024; // Low
+    if (thinkingLevel === "medium") budgetTokens = 4096;
+    if (thinkingLevel === "high") budgetTokens = 16384;
+    if (thinkingLevel === "ultra") budgetTokens = 32768;
+
+    payload.thinking = {
+      type: "enabled",
+      budget_tokens: budgetTokens
+    };
+  }
+
+  // Mekanisme Search System (OpenRouter Web Plugin)
+  if (enableSearch) {
+    payload.plugins = [{ id: "web" }];
+  }
+
   const upstream = await fetch(OPENROUTER_URL, {
     method: "POST",
     headers: {
@@ -115,11 +141,7 @@ export default async function handler(req, res) {
         process.env.OPENROUTER_APP_TITLE ||
         "HyperAI"
     },
-    body: JSON.stringify({
-      model: model.trim(),
-      messages: normalizedMessages,
-      stream: true
-    })
+    body: JSON.stringify(payload)
   });
 
   res.statusCode = upstream.status;
