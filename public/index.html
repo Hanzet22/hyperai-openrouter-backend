@@ -1,326 +1,331 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" data-theme="dark" data-motion="basic">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#070a12">
-  <meta name="description" content="HyperAI — local-first animated OpenRouter AI client">
-  <title>HyperAI // OpenRouter</title>
+  <meta name="theme-color" content="#080b13">
+  <meta name="description" content="HyperAI — a lightweight OpenRouter chat client by HyperGaruda.">
+  <title>HyperAI</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <style>
     :root {
       color-scheme: dark;
-      --bg-0: #05070b;
-      --bg-1: #080c15;
-      --panel: rgba(12, 17, 28, .78);
-      --panel-solid: #0d1420;
-      --line: rgba(148, 163, 184, .16);
-      --line-strong: rgba(148, 163, 184, .3);
-      --text: #eef4ff;
-      --muted: #8c99ad;
-      --accent: #62a8ff;
-      --accent-2: #8b5cff;
-      --cyan: #42e8ff;
-      --danger: #ff5f7a;
-      --success: #45e0a0;
-      --shadow: 0 28px 80px rgba(0, 0, 0, .5);
+      --bg: #080b13;
+      --bg-soft: #0d1220;
+      --panel: rgba(17, 23, 37, .82);
+      --panel-solid: #111725;
+      --panel-hover: #192237;
+      --text: #edf3ff;
+      --muted: #98a6bc;
+      --faint: #6f7c92;
+      --line: rgba(151, 169, 198, .17);
+      --line-strong: rgba(151, 169, 198, .32);
+      --accent: #75adff;
+      --accent-2: #a08aff;
+      --cyan: #50dffc;
+      --success: #52dfaa;
+      --danger: #ff708b;
+      --shadow: 0 20px 70px rgba(0,0,0,.28);
       --radius: 18px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #eef3fb;
+      --bg-soft: #e8eef8;
+      --panel: rgba(255,255,255,.82);
+      --panel-solid: #ffffff;
+      --panel-hover: #edf3fd;
+      --text: #182337;
+      --muted: #5e6b80;
+      --faint: #78869a;
+      --line: rgba(62, 82, 113, .16);
+      --line-strong: rgba(62, 82, 113, .30);
+      --accent: #286bd8;
+      --accent-2: #7250d6;
+      --cyan: #087f9c;
+      --success: #087a52;
+      --danger: #c93858;
+      --shadow: 0 20px 70px rgba(45,67,102,.13);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; min-height: 100%; background: var(--bg-0); }
+    html, body { width: 100%; min-height: 100%; background: var(--bg); }
     body {
-      min-height: 100vh; min-height: 100dvh; overflow: hidden;
-      color: var(--text);
+      min-height: 100vh; min-height: 100dvh; overflow: hidden; color: var(--text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+      transition: background-color .28s ease, color .28s ease;
     }
-    button, input, textarea, select { font: inherit; }
-    button { -webkit-tap-highlight-color: transparent; }
-    button:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    button, textarea { font: inherit; }
+    button { color: inherit; -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
     button:disabled { cursor: not-allowed !important; opacity: .48; transform: none !important; }
+    [hidden] { display: none !important; }
 
-    .scene { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
-      background: radial-gradient(circle at 18% 15%, rgba(98,168,255,.12), transparent 30%),
-      radial-gradient(circle at 82% 17%, rgba(139,92,255,.14), transparent 30%),
-      radial-gradient(circle at 50% 92%, rgba(66,232,255,.09), transparent 35%),
-      linear-gradient(180deg, var(--bg-1), var(--bg-0)); }
-    .scene::before { content: ""; position: absolute; inset: -45%;
-      background: linear-gradient(transparent 49.5%, rgba(98,168,255,.06) 50%, transparent 50.5%),
-      linear-gradient(90deg, transparent 49.5%, rgba(98,168,255,.04) 50%, transparent 50.5%);
-      background-size: 64px 64px; transform: perspective(600px) rotateX(67deg) translateY(18%); transform-origin: center bottom; animation: gridDrift 15s linear infinite; }
-    .orb { position: absolute; width: 45vw; aspect-ratio: 1; border-radius: 50%; filter: blur(80px); opacity: .2; animation: orbitPulse 12s ease-in-out infinite; }
-    .orb.a { top: -20vw; left: -10vw; background: #2d7fff; }
-    .orb.b { top: 15vh; right: -15vw; background: #8b3dff; animation-delay: -4s; }
-    .orb.c { bottom: -25vw; left: 30vw; background: #00c8ff; animation-delay: -8s; }
-    .cursor-glow { position: fixed; left: 50%; top: 50%; width: 300px; height: 300px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(98,168,255,.12), transparent 70%); transform: translate(-50%,-50%); pointer-events: none; z-index: 1; filter: blur(8px); }
-    @keyframes gridDrift { from { transform: perspective(600px) rotateX(67deg) translateY(18%) translateY(0); } to { transform: perspective(600px) rotateX(67deg) translateY(18%) translateY(64px); } }
-    @keyframes orbitPulse { 0%,100% { transform: translate3d(0,0,0) scale(1); opacity: .15; } 50% { transform: translate3d(3vw,4vh,0) scale(1.15); opacity: .25; } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes popup { from { opacity: 0; transform: scale(.96) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-    @keyframes messageIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulseGlow { from { transform: scale(1); opacity: .7; } to { transform: scale(1.5); opacity: 1; } }
-    @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-6px); opacity: 1; } }
+    .backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+      background: radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 31%),
+      radial-gradient(circle at 90% 18%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 33%),
+      radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--cyan) 8%, transparent), transparent 38%), var(--bg); }
+    .backdrop::before { content: ""; position: absolute; inset: -30%; opacity: 0; background-image: linear-gradient(color-mix(in srgb, var(--accent) 9%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 1px, transparent 1px); background-size: 54px 54px; transform: perspective(650px) rotateX(62deg) translateY(18%); transform-origin: center bottom; transition: opacity .5s ease; }
+    .orb { position: absolute; width: 42vw; max-width: 600px; aspect-ratio: 1; border-radius: 50%; filter: blur(75px); opacity: .09; background: var(--accent); transform: translate3d(0,0,0); }
+    .orb.one { top: -21vw; left: -13vw; }
+    .orb.two { right: -18vw; top: 22vh; background: var(--accent-2); }
+    .orb.three { left: 28vw; bottom: -30vw; background: var(--cyan); }
+    .cursor-glow { position: fixed; left: 50%; top: 50%; width: 270px; height: 270px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%); pointer-events: none; z-index: 1; opacity: 0; }
+    html[data-motion="advanced"] .backdrop::before { opacity: 1; animation: gridDrift 18s linear infinite; }
+    html[data-motion="advanced"] .orb { opacity: .17; animation: orbFloat 13s ease-in-out infinite alternate; }
+    html[data-motion="advanced"] .orb.two { animation-delay: -4s; }
+    html[data-motion="advanced"] .orb.three { animation-delay: -8s; }
+    html[data-motion="advanced"] .cursor-glow { opacity: .9; }
+    @keyframes gridDrift { from { transform: perspective(650px) rotateX(62deg) translateY(18%) translateY(0); } to { transform: perspective(650px) rotateX(62deg) translateY(18%) translateY(54px); } }
+    @keyframes orbFloat { from { transform: translate3d(-1vw,-1vh,0) scale(.96); } to { transform: translate3d(3vw,4vh,0) scale(1.12); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { from { opacity: 0; transform: scale(.97) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes softPulse { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); } to { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 9%, transparent); } }
     @keyframes gradientShift { to { background-position: 200% center; } }
+    @keyframes typing { 0%,60%,100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-5px); opacity: 1; } }
 
-    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(4,7,12,.86); backdrop-filter: blur(22px); display: grid; place-items: center; padding: 16px; animation: fadeIn .4s ease both; }
-    .modal-overlay.is-closing { opacity: 0; transform: scale(1.02); transition: all .28s ease; pointer-events: none; }
-    .modal-box { width: min(620px, 100%); max-height: 88vh; max-height: 88dvh; background: rgba(13,19,29,.97); border: 1px solid rgba(98,168,255,.4); border-radius: 22px; padding: 24px; box-shadow: 0 30px 70px rgba(0,0,0,.8), 0 0 30px rgba(98,168,255,.1); display: flex; flex-direction: column; overflow: hidden; animation: popup .45s cubic-bezier(.16,1,.3,1) both; }
-    .modal-header { text-align: center; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
-    .modal-header h2 { font-size: 15px; color: var(--accent); letter-spacing: .07em; }
-    .modal-body { overflow-y: auto; font-size: 12px; line-height: 1.75; color: #cbd5e1; padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.2) transparent; }
-    .modal-body p, .modal-body ul { margin-bottom: 12px; }
-    .modal-body ul { padding-left: 20px; }
-    .modal-body a { color: var(--accent); overflow-wrap: anywhere; }
-    .modal-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
-    .modal-btn { width: 100%; min-height: 44px; padding: 12px; border-radius: 13px; border: 1px solid rgba(69,224,160,.5); background: linear-gradient(135deg, rgba(69,224,160,.2), rgba(98,168,255,.2)); color: #a8ffd9; font-weight: 800; cursor: pointer; font-size: 12px; transition: .2s ease; }
-    .modal-btn:hover { background: rgba(69,224,160,.2); transform: translateY(-2px); }
+    .app { position: relative; z-index: 2; width: min(1120px, 100%); height: 100vh; height: 100dvh; margin: 0 auto; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; border-inline: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(18px); box-shadow: var(--shadow); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 17px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .brand-mark { width: 39px; height: 39px; flex: 0 0 39px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 13px; background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 22%, var(--panel-solid)), var(--panel-solid)); color: var(--accent); font-size: 21px; transition: transform .28s var(--ease), box-shadow .28s ease; }
+    .brand-mark:hover { transform: rotate(-8deg) scale(1.04); box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 16%, transparent); }
+    .brand h1 { font-size: 14px; letter-spacing: .075em; text-transform: uppercase; line-height: 1.2; }
+    .brand p { color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+    .status { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 8px 10px; white-space: nowrap; font-size: 10px; color: var(--muted); }
+    .status-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--success); }
+    .status-dot.busy { background: var(--accent); animation: softPulse .9s ease-in-out infinite alternate; }
+    .status-dot.error { background: var(--danger); }
+    .icon-btn, .quiet-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 35px; padding: 0 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); color: var(--text); cursor: pointer; transition: border-color .2s, background .2s, transform .2s var(--ease); }
+    .icon-btn { font-size: 16px; min-width: 36px; padding: 0 9px; }
+    .quiet-btn { font-size: 10px; font-weight: 700; }
+    .icon-btn:hover, .quiet-btn:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--panel-hover); transform: translateY(-1px); }
+    #motionBtn[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
 
-    .app { position: relative; z-index: 2; width: min(1240px,100%); height: 100vh; height: 100dvh; margin: 0 auto; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; background: rgba(4,7,12,.5); border-inline: 1px solid rgba(255,255,255,.06); box-shadow: var(--shadow); backdrop-filter: blur(20px); animation: fadeIn .5s ease both; }
-    .topbar { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(12,17,28,.95), rgba(8,12,20,.8)); }
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .brand-mark { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border: 1px solid rgba(98,168,255,.35); border-radius: 14px; background: radial-gradient(circle at 35% 30%, rgba(98,168,255,.35), transparent 46%), rgba(12,20,34,.9); box-shadow: inset 0 0 24px rgba(98,168,255,.1), 0 0 20px rgba(98,168,255,.1); animation: iconGlow 4s ease-in-out infinite alternate; }
-    @keyframes iconGlow { from { box-shadow: inset 0 0 15px rgba(98,168,255,.1), 0 0 10px rgba(98,168,255,.1); } to { box-shadow: inset 0 0 25px rgba(139,92,255,.3), 0 0 25px rgba(139,92,255,.3); } }
-    .brand-mark span { font-size: 22px; color: #c5ddff; }
-    .brand-copy h1 { font-size: 14px; line-height: 1.1; letter-spacing: .05em; text-transform: uppercase; }
-    .brand-copy p { margin-top: 4px; font-size: 11px; color: var(--muted); }
-    .top-status { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; }
-    .status-pill { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(8,13,22,.65); white-space: nowrap; }
-    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
-    .status-dot.ready { background: var(--success); box-shadow: 0 0 14px rgba(69,224,160,.8); }
-    .status-dot.busy { background: var(--accent); box-shadow: 0 0 14px rgba(98,168,255,.8); animation: pulseGlow 1s infinite alternate; }
-    .status-dot.error { background: var(--danger); box-shadow: 0 0 14px rgba(255,95,122,.8); }
-
-    .controls { display: grid; grid-template-columns: minmax(220px,1.8fr) minmax(175px,1fr) minmax(160px,.85fr) auto; gap: 11px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: rgba(9,14,23,.72); align-items: end; }
-    .control { min-width: 0; }
-    .control label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
-    .select, .mini-btn { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; outline: none; color: var(--text); background: linear-gradient(180deg, rgba(16,24,38,.97), rgba(10,16,27,.97)); cursor: pointer; transition: border-color .2s, transform .2s, background .2s; }
-    .select:hover, .mini-btn:hover { border-color: rgba(98,168,255,.5); }
-    .select { text-overflow: ellipsis; }
-    .select option, .select optgroup { background: #0d1420; color: var(--text); }
-    .mini-btn.primary { background: linear-gradient(135deg, rgba(98,168,255,.3), rgba(139,92,255,.25)); border-color: rgba(98,168,255,.6); box-shadow: 0 0 15px rgba(98,168,255,.12); }
-    .mini-btn.danger { color: #ffb4c2; border-color: rgba(255,95,122,.4); }
-    .model-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 1px; color: var(--muted); font-size: 10px; line-height: 1.4; }
-    .model-chip { padding: 4px 8px; border: 1px solid rgba(98,168,255,.25); border-radius: 999px; background: rgba(98,168,255,.08); color: #c6dcff; }
-    .model-id { overflow-wrap: anywhere; color: #9eaec4; }
+    .controls { display: grid; grid-template-columns: minmax(240px,1.4fr) minmax(205px,1fr) auto auto; gap: 10px; align-items: end; padding: 12px 17px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 85%, transparent); }
+    .control { min-width: 0; position: relative; }
+    .control-label { display: block; margin-bottom: 6px; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+    .picker-trigger { width: 100%; min-height: 47px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-solid); color: var(--text); text-align: left; cursor: pointer; transition: border-color .2s, background .2s, box-shadow .2s, transform .2s var(--ease); }
+    .picker-trigger:hover, .picker.open .picker-trigger { border-color: color-mix(in srgb, var(--accent) 58%, var(--line)); background: var(--panel-hover); }
+    .picker-trigger:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    .picker-copy { display: block; min-width: 0; }
+    .picker-main { display: block; font-size: 12px; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picker-sub { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chevron { flex: 0 0 auto; width: 8px; height: 8px; border-right: 1.7px solid var(--muted); border-bottom: 1.7px solid var(--muted); transform: rotate(45deg) translateY(-2px); transition: transform .2s; }
+    .picker.open .chevron { transform: rotate(225deg) translate(-1px,-1px); }
+    .picker-menu { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30; padding: 6px; border: 1px solid var(--line-strong); border-radius: 15px; background: var(--panel-solid); box-shadow: var(--shadow); max-height: min(330px, 50dvh); overflow: auto; animation: pop .16s var(--ease) both; }
+    .picker-option { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid transparent; border-radius: 10px; text-align: left; background: transparent; color: var(--text); cursor: pointer; transition: background .15s, border-color .15s; }
+    .picker-option:hover, .picker-option:focus-visible { background: var(--panel-hover); outline: none; }
+    .picker-option[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 11%, var(--panel-solid)); border-color: color-mix(in srgb, var(--accent) 32%, transparent); }
+    .option-icon { flex: 0 0 28px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--accent) 12%, var(--panel-solid)); color: var(--accent); font-size: 11px; font-weight: 900; }
+    .option-copy { min-width: 0; flex: 1; }
+    .option-title { display: block; font-size: 11px; font-weight: 750; }
+    .option-desc { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+    .option-check { color: var(--success); font-size: 13px; opacity: 0; }
+    .picker-option[aria-selected="true"] .option-check { opacity: 1; }
+    .control-action { height: 47px; white-space: nowrap; }
+    .control-action.search-active { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 10%, var(--panel-solid)); }
+    .model-info { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); font-size: 10px; }
+    .model-chip { padding: 4px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--panel-solid)); white-space: nowrap; }
+    #modelIdLabel { overflow-wrap: anywhere; }
 
     .chat-wrap { position: relative; min-height: 0; overflow: hidden; }
-    .chat { height: 100%; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; padding: 26px 18px; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,.2) transparent; }
-    .welcome { width: min(760px,100%); margin: 7vh auto 0; text-align: center; animation: popup .7s cubic-bezier(.2,.8,.2,1) both; }
-    .welcome-badge { display: inline-flex; padding: 6px 13px; border-radius: 999px; color: #bfd7ff; background: rgba(11,18,31,.85); border: 1px solid var(--line); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
-    .welcome h2 { margin-top: 15px; font-size: clamp(26px,4vw,44px); background: linear-gradient(90deg,#fff,#a9ccff,#d0bbff,#fff); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 6s linear infinite; }
-    .welcome p { max-width: 590px; margin: 10px auto 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
-    .quick-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 24px; text-align: left; }
-    .quick { min-height: 90px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(10,16,27,.75); color: var(--text); cursor: pointer; text-align: left; transition: .25s ease; }
-    .quick:hover { transform: translateY(-3px); border-color: rgba(98,168,255,.5); background: rgba(16,24,39,.95); box-shadow: 0 10px 30px rgba(0,0,0,.25), 0 0 15px rgba(98,168,255,.1); }
-    .quick strong { display: block; font-size: 11px; margin-bottom: 5px; }
-    .quick span { color: var(--muted); font-size: 10px; line-height: 1.5; }
-    .welcome-note { margin-top: 16px !important; font-size: 10px !important; color: #71839c !important; }
+    .chat { height: 100%; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; padding: 25px 17px; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+    .welcome { width: min(700px,100%); margin: clamp(16px,5vh,60px) auto 22px; text-align: center; animation: fadeUp .45s var(--ease) both; }
+    .welcome-badge { display: inline-flex; padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--accent); background: var(--panel); font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+    .welcome h2 { margin-top: 16px; font-size: clamp(27px,4vw,42px); line-height: 1.15; letter-spacing: -.035em; background: linear-gradient(90deg,var(--text),var(--accent),var(--accent-2),var(--text)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: gradientShift 8s linear infinite; }
+    .welcome p { max-width: 580px; margin: 11px auto 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .quick-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 22px; text-align: left; }
+    .quick { min-height: 84px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); text-align: left; cursor: pointer; transition: border-color .22s, background .22s, transform .22s var(--ease), box-shadow .22s; }
+    .quick:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--panel-hover); box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 6%, transparent); }
+    .quick strong { display: block; color: var(--text); font-size: 11px; margin-bottom: 6px; }
+    .quick span { display: block; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .welcome-note { margin-top: 16px !important; font-size: 10px !important; color: var(--faint) !important; }
 
-    .message { width: min(920px,100%); margin: 0 auto 20px; display: flex; gap: 12px; animation: messageIn .3s ease both; }
+    .message { width: min(860px,100%); display: flex; gap: 10px; margin: 0 auto 17px; animation: fadeUp .22s var(--ease) both; }
     .message.user { flex-direction: row-reverse; }
-    .avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 12px; display: grid; place-items: center; background: rgba(16,24,39,.95); border: 1px solid var(--line); font-size: 10px; font-weight: 800; box-shadow: 0 4px 15px rgba(0,0,0,.2); }
-    .message.assistant .avatar { color: #c6dcff; border-color: rgba(98,168,255,.25); }
-    .bubble-wrap { max-width: min(85%,800px); min-width: 0; }
-    .meta { font-size: 9px; color: #738096; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+    .avatar { width: 31px; height: 31px; flex: 0 0 31px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--accent); font-size: 9px; font-weight: 900; }
+    .message.user .avatar { color: var(--muted); }
+    .bubble-wrap { max-width: min(86%,760px); min-width: 0; }
+    .meta { margin-bottom: 5px; color: var(--faint); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
     .message.user .meta { text-align: right; }
-    .bubble { padding: 14px 17px; border-radius: 16px; font-size: 13px; line-height: 1.7; border: 1px solid var(--line); overflow-wrap: anywhere; box-shadow: 0 12px 35px rgba(0,0,0,.15); }
-    .message.user .bubble { background: linear-gradient(135deg,rgba(54,104,180,.35),rgba(98,168,255,.15)); border-color: rgba(98,168,255,.3); border-top-right-radius: 4px; }
-    .message.assistant .bubble { background: linear-gradient(135deg,rgba(28,38,58,.8),rgba(16,22,35,.88)); border-top-left-radius: 4px; }
-    .bubble p + p, .bubble ul + p, .bubble p + ul { margin-top: 9px; }
+    .bubble { padding: 12px 15px; border: 1px solid var(--line); border-radius: 15px; background: var(--panel); font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; box-shadow: 0 6px 24px rgba(0,0,0,.04); }
+    .message.user .bubble { border-color: color-mix(in srgb, var(--accent) 25%, var(--line)); background: color-mix(in srgb, var(--accent) 10%, var(--panel-solid)); border-top-right-radius: 4px; }
+    .message.assistant .bubble { border-top-left-radius: 4px; }
+    .bubble p + p, .bubble ul + p, .bubble p + ul, .bubble p + ol { margin-top: 8px; }
     .bubble ul, .bubble ol { padding-left: 22px; margin: 8px 0; }
-    .bubble a { color: #9cc6ff; }
-    .bubble pre { margin: 10px 0; padding: 12px; background: rgba(2,6,13,.8); border-radius: 10px; overflow-x: auto; border: 1px solid rgba(148,163,184,.15); }
-    .bubble code { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 11px; }
-    .bubble :not(pre) > code { padding: 2px 5px; border-radius: 5px; background: rgba(2,6,13,.65); }
+    .bubble a { color: var(--accent); }
+    .bubble pre { margin: 10px 0; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--bg) 86%, transparent); overflow-x: auto; }
+    .bubble code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+    .bubble :not(pre) > code { padding: 2px 5px; border-radius: 5px; background: color-mix(in srgb, var(--bg) 86%, transparent); }
     .typing { display: inline-flex; align-items: center; gap: 5px; min-height: 20px; }
-    .typing i { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: typingBounce 1s infinite ease-in-out; }
-    .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+    .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: typing 1s infinite ease-in-out; }
+    .typing i:nth-child(2) { animation-delay: .16s; } .typing i:nth-child(3) { animation-delay: .32s; }
 
-    .composer { padding: 12px 18px max(14px,env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(10,15,24,.93); backdrop-filter: blur(20px); }
-    .composer-inner { width: min(920px,100%); margin: 0 auto; display: flex; align-items: flex-end; gap: 9px; }
+    .composer { padding: 11px 17px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--panel); }
+    .composer-inner { width: min(860px,100%); margin: 0 auto; display: flex; align-items: flex-end; gap: 8px; }
     .prompt-wrap { position: relative; flex: 1; min-width: 0; }
-    #prompt { display: block; width: 100%; min-height: 48px; max-height: 160px; resize: none; padding: 12px 58px 12px 14px; border: 1px solid var(--line); border-radius: 15px; outline: none; color: var(--text); background: rgba(16,24,38,.97); font-size: 13px; line-height: 1.5; transition: border-color .2s, box-shadow .2s; }
-    #prompt:focus { border-color: rgba(98,168,255,.6); box-shadow: 0 0 0 3px rgba(98,168,255,.1); }
-    #prompt:disabled { opacity: .7; }
-    .char-count { position: absolute; right: 12px; bottom: 9px; font-size: 8px; color: var(--muted); pointer-events: none; }
-    .send, .stop { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 14px; border: 1px solid rgba(98,168,255,.4); background: linear-gradient(135deg,rgba(98,168,255,.35),rgba(139,92,255,.3)); color: white; cursor: pointer; display: grid; place-items: center; transition: transform .2s, filter .2s; box-shadow: 0 6px 20px rgba(44,80,145,.2); }
-    .send { font-size: 19px; } .send:hover { transform: translateY(-2px); filter: brightness(1.15); }
-    .stop { display: none; background: linear-gradient(135deg,rgba(255,95,122,.3),rgba(139,92,255,.25)); border-color: rgba(255,95,122,.5); }
-    .composer-tools { width: min(920px,100%); margin: 8px auto 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--muted); font-size: 9px; }
-    .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
-    .tool-btn { background: rgba(10,16,26,.65); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: #a4b4c9; cursor: pointer; transition: .2s ease; font-size: 10px; }
-    .tool-btn:hover { color: var(--text); border-color: var(--line-strong); }
-    .footer-model { text-align: right; overflow-wrap: anywhere; }
-    .toast { position: fixed; left: 50%; bottom: 92px; z-index: 1100; transform: translate(-50%,20px); max-width: calc(100vw - 28px); padding: 10px 15px; border-radius: 12px; background: rgba(8,13,22,.97); border: 1px solid var(--line-strong); color: #d9e6fb; font-size: 11px; text-align: center; opacity: 0; pointer-events: none; transition: all .25s ease; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+    #prompt { display: block; width: 100%; min-height: 46px; max-height: 160px; resize: none; padding: 12px 60px 12px 13px; border: 1px solid var(--line); border-radius: 14px; outline: none; background: var(--panel-solid); color: var(--text); font-size: 13px; line-height: 1.5; transition: border-color .2s, box-shadow .2s, background .2s; }
+    #prompt::placeholder { color: var(--faint); }
+    #prompt:focus { border-color: color-mix(in srgb, var(--accent) 58%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent); }
+    .char-count { position: absolute; right: 11px; bottom: 9px; pointer-events: none; color: var(--faint); font-size: 8px; }
+    .send, .stop { width: 46px; height: 46px; flex: 0 0 46px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 13px; background: linear-gradient(140deg,color-mix(in srgb, var(--accent) 24%, var(--panel-solid)),color-mix(in srgb, var(--accent-2) 20%, var(--panel-solid))); color: var(--text); cursor: pointer; font-size: 18px; transition: transform .18s var(--ease), filter .18s; }
+    .send:hover, .stop:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    .stop { display: none; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+    .composer-tools { width: min(860px,100%); margin: 8px auto 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 9px; }
+    .tool-group { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .tool-btn { min-height: 27px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 9px; transition: background .18s, border-color .18s, color .18s; }
+    .tool-btn:hover { color: var(--text); border-color: var(--line-strong); background: var(--panel-hover); }
+    .footer-model { max-width: 47%; text-align: right; overflow-wrap: anywhere; color: var(--faint); }
+    .toast { position: fixed; left: 50%; bottom: 94px; z-index: 1100; transform: translate(-50%,12px); width: max-content; max-width: calc(100vw - 28px); padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--panel-solid); color: var(--text); font-size: 11px; text-align: center; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
     .toast.show { opacity: 1; transform: translate(-50%,0); }
 
-    @media (max-width: 900px) {
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 15px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(15px); animation: fadeUp .25s ease both; }
+    .modal-box { width: min(590px,100%); max-height: 88vh; max-height: 88dvh; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 19px; background: var(--panel-solid); box-shadow: var(--shadow); animation: pop .3s var(--ease) both; }
+    .modal-header { padding: 17px 19px 13px; border-bottom: 1px solid var(--line); }
+    .modal-header h2 { color: var(--accent); font-size: 14px; }
+    .modal-body { overflow: auto; padding: 16px 19px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .modal-body p, .modal-body ul { margin-bottom: 11px; }
+    .modal-body ul { padding-left: 21px; }
+    .modal-body a { color: var(--accent); overflow-wrap: anywhere; }
+    .modal-footer { padding: 12px 19px 16px; border-top: 1px solid var(--line); }
+    .modal-btn { width: 100%; min-height: 42px; border: 1px solid color-mix(in srgb, var(--success) 40%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--success) 9%, var(--panel-solid)); color: var(--success); font-size: 11px; font-weight: 850; cursor: pointer; transition: transform .2s, background .2s; }
+    .modal-btn:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--success) 15%, var(--panel-solid)); }
+    .modal-overlay.is-closing { opacity: 0; transition: opacity .2s; pointer-events: none; }
+
+    @media (max-width: 800px) {
       .controls { grid-template-columns: repeat(2,minmax(0,1fr)); }
-      .model-meta { grid-column: 1 / -1; }
-      .welcome { margin-top: 3vh; }
+      .model-info { grid-column: 1 / -1; }
     }
-    @media (max-width: 600px) {
-      .topbar { padding: 12px; gap: 9px; }
-      .brand { gap: 9px; }
-      .brand-mark { width: 36px; height: 36px; flex-basis: 36px; border-radius: 12px; }
-      .brand-copy h1 { font-size: 12px; }
-      .brand-copy p { font-size: 9px; }
-      .top-status { font-size: 10px; }
-      .status-pill { padding: 7px 9px; }
-      .controls { gap: 9px; padding: 10px 12px; }
-      .control label { font-size: 9px; }
-      .select, .mini-btn { min-height: 40px; padding-inline: 9px; font-size: 11px; }
-      .chat { padding: 20px 12px; }
-      .welcome { margin-top: 5vh; }
-      .quick-grid { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; }
-      .quick { min-height: 0; padding: 11px 12px; }
-      .quick span { font-size: 10px; }
-      .message { gap: 8px; margin-bottom: 15px; }
-      .avatar { width: 29px; height: 29px; flex-basis: 29px; border-radius: 10px; font-size: 9px; }
-      .bubble-wrap { max-width: calc(100% - 37px); }
-      .bubble { padding: 12px 13px; font-size: 12px; }
-      .composer { padding: 10px 12px max(12px,env(safe-area-inset-bottom)); }
-      .send, .stop { width: 43px; height: 46px; flex-basis: 43px; }
-      #prompt { min-height: 46px; font-size: 12px; padding-left: 12px; }
+    @media (max-width: 560px) {
+      .topbar { padding: 10px 11px; align-items: flex-start; }
+      .brand { gap: 8px; }
+      .brand-mark { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
+      .brand h1 { font-size: 11px; }
+      .brand p { font-size: 9px; }
+      .header-actions { gap: 5px; max-width: 62%; }
+      .status { order: 3; padding: 6px 8px; font-size: 9px; }
+      .icon-btn { min-width: 33px; min-height: 33px; padding: 0 7px; font-size: 14px; }
+      #motionBtn { font-size: 9px; padding: 0 8px; }
+      .controls { gap: 8px; padding: 10px 11px; }
+      .control-label { font-size: 9px; }
+      .picker-trigger { min-height: 43px; padding: 7px 9px; }
+      .picker-main { font-size: 10px; }
+      .picker-sub { font-size: 8px; }
+      .control-action { height: 43px; min-height: 43px; padding: 0 8px; font-size: 9px; }
+      .model-info { align-items: flex-start; flex-wrap: wrap; gap: 6px; font-size: 9px; }
+      .chat { padding: 17px 11px; }
+      .welcome { margin-top: 4vh; }
+      .welcome h2 { font-size: 29px; }
+      .quick-grid { grid-template-columns: 1fr; gap: 7px; margin-top: 17px; }
+      .quick { min-height: 0; padding: 10px 11px; }
+      .message { gap: 7px; margin-bottom: 13px; }
+      .avatar { width: 27px; height: 27px; flex-basis: 27px; border-radius: 9px; font-size: 8px; }
+      .bubble-wrap { max-width: calc(100% - 34px); }
+      .bubble { padding: 10px 12px; font-size: 12px; }
+      .composer { padding: 9px 11px max(10px,env(safe-area-inset-bottom)); }
+      .send, .stop { width: 42px; height: 44px; flex-basis: 42px; }
+      #prompt { min-height: 44px; font-size: 12px; }
       .composer-tools { align-items: flex-start; }
-      .tool-group { gap: 5px; }
-      .tool-btn { font-size: 9px; padding: 6px 7px; }
+      .tool-group { gap: 4px; }
+      .tool-btn { font-size: 8px; padding: 5px 6px; }
       .footer-model { display: none; }
-      .modal-box { padding: 18px; }
-      .modal-header h2 { font-size: 13px; }
-      .cursor-glow { display: none; }
+      .modal-header, .modal-body { padding-inline: 15px; }
+      .modal-footer { padding-inline: 15px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-      .cursor-glow { display: none; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      html[data-motion="advanced"] .backdrop::before, html[data-motion="advanced"] .orb { animation: none !important; }
     }
   </style>
 </head>
 <body>
+  <div class="backdrop" aria-hidden="true"><div class="orb one"></div><div class="orb two"></div><div class="orb three"></div></div>
+  <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
   <div id="welcomeModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-box">
-      <div class="modal-header"><h2 id="modalTitle">⚡ Informasi &amp; Ketentuan HyperAI</h2></div>
+    <section class="modal-box">
+      <header class="modal-header"><h2 id="modalTitle">⚡ Informasi &amp; Ketentuan HyperAI</h2></header>
       <div class="modal-body">
-        <p><strong>Selamat datang di HyperAI</strong>, dibuat oleh HyperGaruda. Aplikasi ini menggunakan OpenRouter sebagai agregator model. Pilihan model gratis dapat mengalami batas penggunaan, antrean, atau perubahan ketersediaan.</p>
+        <p><strong>Selamat datang di HyperAI</strong>, dibuat oleh HyperGaruda. Aplikasi ini menggunakan OpenRouter sebagai agregator model. Model gratis dapat mengalami batas penggunaan, antrean, atau perubahan ketersediaan.</p>
         <p><strong>Aturan utama:</strong></p>
-        <ul>
-          <li>Bagikan jika bermanfaat.</li>
-          <li>Sampaikan feedback dengan baik jika menemukan kekurangan.</li>
-          <li><strong>Dilarang menggunakan layanan ini untuk pengujian DDoS atau aktivitas yang mengganggu layanan.</strong></li>
-        </ul>
+        <ul><li>Bagikan jika bermanfaat.</li><li>Sampaikan feedback dengan baik jika menemukan kekurangan.</li><li><strong>Dilarang menggunakan layanan ini untuk pengujian DDoS atau aktivitas yang mengganggu layanan.</strong></li></ul>
         <p><strong>Media sosial:</strong><br><a href="https://www.instagram.com/muhamad_farhannn_" target="_blank" rel="noopener noreferrer">Instagram</a><br><a href="https://v.douyin.com/P0Qx2tl0KSA/" target="_blank" rel="noopener noreferrer">Douyin</a></p>
         <p><strong>Proyek:</strong><br><a href="https://github.com/Hanzet22" target="_blank" rel="noopener noreferrer">GitHub</a><br><a href="https://www.behance.net/farhanzet_22" target="_blank" rel="noopener noreferrer">Behance</a></p>
         <p><strong>Kontak:</strong><br>Email: farhanzet4@gmail.com<br>Telegram: @Hypergaruda<br>WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a></p>
         <p><strong>Private DM:</strong><br>Discord: hgi.id</p>
         <p><strong>Kolaborasi:</strong><br>Email: hypergarudatkj@gmail.com<br>Telegram: @Hypergaruda<br>Discord: hgi_official<br>WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a></p>
         <p><strong>Donasi sukarela:</strong><br>DANA / GoPay: 085272995674</p>
-        <p><strong>Privasi:</strong> Jangan masukkan kata sandi, API key, data pribadi sensitif, atau informasi rahasia ke layanan AI pihak ketiga. Sebagian penyedia model gratis dapat menyimpan prompt dan respons berdasarkan kebijakan mereka.</p>
+        <p><strong>Privasi:</strong> Jangan masukkan kata sandi, API key, data pribadi sensitif, atau informasi rahasia ke layanan AI pihak ketiga. Penyedia model dapat menangani prompt dan respons sesuai kebijakan masing-masing.</p>
         <p>Terima kasih dan selamat menggunakan HyperAI! ⚡</p>
       </div>
-      <div class="modal-footer"><button id="closeModalBtn" class="modal-btn" type="button">MENGERTI, LANJUT MASUK →</button></div>
-    </div>
+      <footer class="modal-footer"><button id="closeModalBtn" class="modal-btn" type="button">MENGERTI, LANJUT MASUK →</button></footer>
+    </section>
   </div>
-
-  <div class="scene" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
-  <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
 
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true"><span>✦</span></div>
-        <div class="brand-copy"><h1>HyperAI // OpenRouter</h1><p>AI Client · Model Lab Free</p></div>
+        <div class="brand-mark" aria-hidden="true">✦</div>
+        <div><h1>HyperAI</h1><p>Model Lab · OpenRouter</p></div>
       </div>
-      <div class="top-status"><div class="status-pill"><span id="statusDot" class="status-dot ready"></span><span id="statusText" role="status" aria-live="polite">Siap</span></div></div>
+      <div class="header-actions">
+        <div class="status"><span id="statusDot" class="status-dot"></span><span id="statusText" role="status" aria-live="polite">Siap</span></div>
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="Ganti tema" title="Ganti Night/Day Mode">☀️</button>
+        <button id="motionBtn" class="quiet-btn" type="button" aria-pressed="false" title="Aktifkan animasi lanjutan">✦ Advanced Motion: OFF</button>
+      </div>
     </header>
 
     <section class="controls" aria-label="Pengaturan model dan percakapan">
       <div class="control">
-        <label for="modelSelect">🤖 Model AI</label>
-        <select id="modelSelect" class="select" aria-describedby="modelMeta">
-          <option value="openrouter/free">Auto · OpenRouter Free</option>
-          <optgroup label="Chat — 12 model dari daftar HyperAI">
-            <option value="xingchen-agi/xing4.0-29b-a4b:free">Xing4.0 29B A4B</option>
-            <option value="nvidia/nemotron-3.5-super-vl:free">Nemotron 3.5 Super VL · multimodal</option>
-            <option value="liquid/lfm-2.5-2.6b:free">Liquid LFM 2.5 · 2.6B</option>
-            <option value="nvidia/nemotron-3.5-lightning:free">Nemotron 3.5 Lightning</option>
-            <option value="thinkingmachines/inkling-small:free">Thinking Machines · Inkling Small</option>
-            <option value="thinkingmachines/inkling:free">Thinking Machines · Inkling</option>
-            <option value="cohere/north-mini-code:free">Cohere · North Mini Code</option>
-            <option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nemotron 3 Ultra · 550B</option>
-            <option value="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free">Nemotron 3 Nano Omni · multimodal</option>
-            <option value="google/gemma-4-26b-a4b-it:free">Google · Gemma 4 26B A4B</option>
-            <option value="google/gemma-4-31b-it:free">Google · Gemma 4 31B</option>
-            <option value="nvidia/nemotron-3-super-120b-a12b:free">Nemotron 3 Super · 120B</option>
-          </optgroup>
-          <optgroup label="Khusus — perlu endpoint terpisah (belum bisa dikirim dari chat)">
-            <option value="inception/mercury-decide:free" disabled>Mercury Decide · Decisions API</option>
-            <option value="respan/span-01-lite:free" disabled>Span-01 Lite · Decisions API</option>
-            <option value="liquid/lfm-2.5-embedding-350m:free" disabled>LFM 2.5 Embedding 350M · embeddings</option>
-            <option value="fish-audio/s2.1-pro-free:free" disabled>Fish Audio S2.1 Pro · audio</option>
-            <option value="nvidia/nemotron-3-embed-1b:free" disabled>Nemotron 3 Embed 1B · embeddings</option>
-            <option value="nvidia/llama-nemotron-rerank-vl-1b-v2:free" disabled>Llama Nemotron Rerank VL · reranking</option>
-            <option value="nvidia/nemotron-3.5-content-safety:free" disabled>Nemotron 3.5 Content Safety · moderation</option>
-            <option value="nvidia/llama-nemotron-embed-vl-1b-v2:free" disabled>Llama Nemotron Embed VL · multimodal embeddings</option>
-          </optgroup>
-        </select>
+        <span class="control-label" id="modelLabel">🤖 Model AI</span>
+        <div id="modelPicker" class="picker">
+          <button id="modelTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="modelLabel modelName">
+            <span class="picker-copy"><span id="modelName" class="picker-main">Nemotron 3.5 Super VL</span><span id="modelSub" class="picker-sub">NVIDIA · Free endpoint</span></span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div id="modelMenu" class="picker-menu" role="listbox" aria-label="Pilih model AI" hidden></div>
+        </div>
       </div>
       <div class="control">
-        <label for="thinkingLevel">🧠 Mode Berpikir</label>
-        <select id="thinkingLevel" class="select">
-          <option value="off">⚡ Kilat · Off</option>
-          <option value="low">💡 Santai · Low</option>
-          <option value="medium" selected>⚖️ Standar · Medium</option>
-          <option value="high">🔍 Teliti · High</option>
-          <option value="ultra">🚀 Maksimal · Ultra</option>
-        </select>
+        <span class="control-label" id="thinkingLabel">🧠 Mode Berpikir</span>
+        <div id="thinkingPicker" class="picker">
+          <button id="thinkingTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="thinkingLabel thinkingName">
+            <span class="picker-copy"><span id="thinkingName" class="picker-main">⚖️ Standar · Medium</span><span id="thinkingSub" class="picker-sub">Balanced reasoning effort</span></span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <div id="thinkingMenu" class="picker-menu" role="listbox" aria-label="Pilih mode berpikir" hidden></div>
+        </div>
       </div>
-      <div class="control">
-        <label for="searchToggleBtn">🌐 Pencarian web</label>
-        <button id="searchToggleBtn" class="mini-btn" type="button" aria-pressed="false">Cari di Web: MATI</button>
-      </div>
-      <div class="control">
-        <label for="clearBtn">🧹 Percakapan</label>
-        <button id="clearBtn" class="mini-btn danger" type="button">Hapus Chat</button>
-      </div>
-      <div id="modelMeta" class="model-meta">
-        <span id="modelChip" class="model-chip">Auto routing</span>
-        <span id="modelIdLabel" class="model-id">openrouter/free</span>
-        <span id="thinkingHint">Parameter reasoning diteruskan oleh backend; dukungan tergantung model/provider.</span>
-      </div>
+      <button id="searchToggleBtn" class="quiet-btn control-action" type="button" aria-pressed="false">🌐 Web: MATI</button>
+      <button id="clearBtn" class="quiet-btn control-action" type="button">🧹 Hapus Chat</button>
+      <div class="model-info"><span id="modelChip" class="model-chip">NVIDIA · Multimodal</span><span id="modelIdLabel">nvidia/nemotron-3.5-super-vl:free</span></div>
     </section>
 
     <section class="chat-wrap">
       <main id="chat" class="chat" aria-label="Percakapan HyperAI" aria-live="off">
         <div id="welcome" class="welcome">
-          <div class="welcome-badge">⚡ HYPERAI OFFICIAL CONSOLE</div>
+          <span class="welcome-badge">⚡ HYPERAI CONSOLE</span>
           <h2>Mau nanya apa hari ini, Bre?</h2>
-          <p>Pilih model di atas, ketik pesan, atau gunakan salah satu topik cepat untuk mulai ngobrol.</p>
+          <p>Pilih model yang tersedia, ketik pesan, atau mulai dari salah satu topik cepat di bawah.</p>
           <div class="quick-grid">
-            <button class="quick" type="button" data-prompt="Jelaskan cara kerja jaringan internet dengan bahasa tongkrongan yang gampang dipahami."><strong>Jaringan &amp; IT</strong><span>Penjelasan simpel dan asyik</span></button>
-            <button class="quick" type="button" data-prompt="Cari dan rangkum berita teknologi terbaru minggu ini. Gunakan pencarian web jika tersedia, dan sertakan tautan sumber."><strong>Berita Terbaru</strong><span>Cari info web real-time</span></button>
-            <button class="quick" type="button" data-prompt="Buatkan roadmap belajar JavaScript dari nol dengan latihan kecil yang cocok untuk pemula."><strong>Belajar Coding</strong><span>Latihan bertahap buat pemula</span></button>
+            <button class="quick" type="button" data-prompt="Jelaskan cara kerja jaringan internet dengan bahasa tongkrongan yang gampang dipahami."><strong>🌐 Jaringan &amp; IT</strong><span>Penjelasan simpel dan asyik</span></button>
+            <button class="quick" type="button" data-prompt="Cari dan rangkum berita teknologi terbaru minggu ini. Gunakan pencarian web jika tersedia, dan sertakan tautan sumber."><strong>📰 Berita Terbaru</strong><span>Minta model mencari sumber web</span></button>
+            <button class="quick" type="button" data-prompt="Buatkan roadmap belajar JavaScript dari nol dengan latihan kecil yang cocok untuk pemula."><strong>💻 Belajar Coding</strong><span>Latihan bertahap buat pemula</span></button>
           </div>
-          <p class="welcome-note">Model gratis bisa mengalami rate limit atau tidak tersedia sewaktu-waktu. Jangan masukkan informasi rahasia.</p>
+          <p class="welcome-note">Daftar aktif berisi model yang sudah kamu uji berhasil. Model gratis tetap dapat terkena rate limit.</p>
         </div>
       </main>
     </section>
 
     <section class="composer" aria-label="Tulis pesan">
       <div class="composer-inner">
-        <div class="prompt-wrap">
-          <textarea id="prompt" rows="1" maxlength="12000" placeholder="Ketik pesan di sini… Enter = kirim, Shift + Enter = baris baru" aria-label="Pesan untuk HyperAI"></textarea>
-          <span id="charCount" class="char-count">0 / 12000</span>
-        </div>
+        <div class="prompt-wrap"><textarea id="prompt" rows="1" maxlength="12000" placeholder="Ketik pesan… Enter = kirim · Shift + Enter = baris baru" aria-label="Pesan untuk HyperAI"></textarea><span id="charCount" class="char-count">0 / 12000</span></div>
         <button id="sendBtn" class="send" type="button" aria-label="Kirim pesan" title="Kirim pesan">➤</button>
         <button id="stopBtn" class="stop" type="button" aria-label="Hentikan respons" title="Hentikan respons">■</button>
       </div>
       <div class="composer-tools">
-        <div class="tool-group">
-          <button id="copyLastBtn" class="tool-btn" type="button" disabled>Salin Jawaban Terakhir</button>
-          <button id="regenBtn" class="tool-btn" type="button" disabled>↻ Ulangi Respons</button>
-        </div>
-        <div id="footerModel" class="footer-model">Model: openrouter/free</div>
+        <div class="tool-group"><button id="copyLastBtn" class="tool-btn" type="button" disabled>Salin Jawaban Terakhir</button><button id="regenBtn" class="tool-btn" type="button" disabled>↻ Ulangi Respons</button></div>
+        <div id="footerModel" class="footer-model">Model: Nemotron 3.5 Super VL</div>
       </div>
     </section>
   </div>
@@ -330,102 +335,205 @@
     "use strict";
 
     const API_URL = "/api/chat";
-    const CHAT_MODELS = {
-      "openrouter/free": { name: "Auto · OpenRouter Free", group: "Auto routing", note: "OpenRouter memilih model free yang tersedia." },
-      "xingchen-agi/xing4.0-29b-a4b:free": { name: "Xing4.0 29B A4B", group: "Reasoning · coding · multimodal", note: "Model gratis; ketersediaan provider dapat berubah." },
-      "nvidia/nemotron-3.5-super-vl:free": { name: "Nemotron 3.5 Super VL", group: "Multimodal · vision-language", note: "Input gambar/dokumen bergantung dukungan API/provider; UI ini saat ini mengirim teks saja." },
-      "liquid/lfm-2.5-2.6b:free": { name: "Liquid LFM 2.5 · 2.6B", group: "Ringan · extraction · RAG", note: "Model kecil untuk tugas ringkas; model provider dapat punya batas penggunaan." },
-      "nvidia/nemotron-3.5-lightning:free": { name: "Nemotron 3.5 Lightning", group: "Agentic · coding · high throughput", note: "Model gratis; parameter reasoning tertentu dapat berbeda dukungannya." },
-      "thinkingmachines/inkling-small:free": { name: "Inkling Small", group: "Reasoning · coding · multimodal", note: "Periksa persyaratan endpoint gratis dan kebijakan data Thinking Machines." },
-      "thinkingmachines/inkling:free": { name: "Inkling", group: "Reasoning · tools · multimodal", note: "Endpoint free mempunyai ketentuan penggunaan/data khusus; jangan kirim data rahasia." },
-      "cohere/north-mini-code:free": { name: "Cohere North Mini Code", group: "Coding · software engineering", note: "Dioptimalkan untuk coding; batas rate free tetap berlaku." },
-      "nvidia/nemotron-3-ultra-550b-a55b:free": { name: "Nemotron 3 Ultra · 550B", group: "Reasoning · research · agentic", note: "Endpoint free memiliki ketentuan data dari penyedia; hindari data pribadi/rahasia." },
-      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": { name: "Nemotron 3 Nano Omni", group: "Multimodal · audio/video reasoning", note: "UI ini mengirim teks saja; input audio, gambar, atau video belum diimplementasikan." },
-      "google/gemma-4-26b-a4b-it:free": { name: "Gemma 4 26B A4B", group: "Multimodal · general · reasoning", note: "UI ini mengirim teks saja meski model mendukung input multimodal." },
-      "google/gemma-4-31b-it:free": { name: "Gemma 4 31B", group: "General · coding · reasoning", note: "UI ini mengirim teks saja meski model mendukung input gambar." },
-      "nvidia/nemotron-3-super-120b-a12b:free": { name: "Nemotron 3 Super · 120B", group: "Reasoning · agentic", note: "Endpoint free dapat memiliki ketentuan penggunaan/data dari penyedia." }
-    };
+    // Active list is restricted to the models already tested successfully.
+    const MODELS = [
+      { id: "nvidia/nemotron-3.5-super-vl:free", name: "Nemotron 3.5 Super VL", maker: "NVIDIA", short: "NVIDIA · Free endpoint", group: "NVIDIA · Multimodal", detail: "Model gratis yang sudah kamu uji berhasil. UI chat ini mengirim teks saja.", icon: "N", description: "NVIDIA · multimodal / vision-language" },
+      { id: "liquid/lfm-2.5-2.6b:free", name: "Liquid LFM 2.5 · 2.6B", maker: "Liquid AI", short: "Liquid AI · Free endpoint", group: "Liquid AI · Lightweight", detail: "Model ringan yang sudah kamu uji berhasil; batas penggunaan provider tetap berlaku.", icon: "L", description: "Liquid AI · model ringan" },
+      { id: "cohere/north-mini-code:free", name: "Cohere North Mini Code", maker: "Cohere", short: "Cohere · Free endpoint", group: "Cohere · Coding", detail: "Model coding yang sudah kamu uji berhasil; batas rate gratis dapat berubah.", icon: "C", description: "Cohere · coding / software engineering" }
+    ];
+    const THINKING_MODES = [
+      { id: "off", name: "⚡ Kilat · Off", subtitle: "Tanpa reasoning tambahan", icon: "⚡" },
+      { id: "low", name: "💡 Santai · Low", subtitle: "Usaha berpikir ringan", icon: "L" },
+      { id: "medium", name: "⚖️ Standar · Medium", subtitle: "Keseimbangan kecepatan dan analisis", icon: "M" },
+      { id: "high", name: "🔍 Teliti · High", subtitle: "Usaha analisis lebih tinggi", icon: "H" },
+      { id: "ultra", name: "🚀 Maksimal · Ultra", subtitle: "Usaha reasoning tertinggi yang diminta", icon: "U" }
+    ];
 
     const $ = (selector) => document.querySelector(selector);
-    const chat = $("#chat");
-    const welcome = $("#welcome");
-    const promptInput = $("#prompt");
-    const sendBtn = $("#sendBtn");
-    const stopBtn = $("#stopBtn");
-    const clearBtn = $("#clearBtn");
-    const copyLastBtn = $("#copyLastBtn");
-    const regenBtn = $("#regenBtn");
-    const modelSelect = $("#modelSelect");
-    const thinkingSelect = $("#thinkingLevel");
-    const searchToggleBtn = $("#searchToggleBtn");
-    const charCount = $("#charCount");
-    const toast = $("#toast");
-    const statusDot = $("#statusDot");
-    const statusText = $("#statusText");
-    const welcomeModal = $("#welcomeModal");
-    const closeModalBtn = $("#closeModalBtn");
-    const cursorGlow = $("#cursorGlow");
-    const modelChip = $("#modelChip");
-    const modelIdLabel = $("#modelIdLabel");
-    const thinkingHint = $("#thinkingHint");
-    const footerModel = $("#footerModel");
+    const chat = $("#chat"), welcome = $("#welcome"), promptInput = $("#prompt");
+    const sendBtn = $("#sendBtn"), stopBtn = $("#stopBtn"), clearBtn = $("#clearBtn");
+    const copyLastBtn = $("#copyLastBtn"), regenBtn = $("#regenBtn");
+    const searchToggleBtn = $("#searchToggleBtn"), charCount = $("#charCount"), toast = $("#toast");
+    const statusDot = $("#statusDot"), statusText = $("#statusText");
+    const welcomeModal = $("#welcomeModal"), closeModalBtn = $("#closeModalBtn");
+    const modelPicker = $("#modelPicker"), modelTrigger = $("#modelTrigger"), modelMenu = $("#modelMenu");
+    const thinkingPicker = $("#thinkingPicker"), thinkingTrigger = $("#thinkingTrigger"), thinkingMenu = $("#thinkingMenu");
+    const modelName = $("#modelName"), modelSub = $("#modelSub"), modelChip = $("#modelChip"), modelIdLabel = $("#modelIdLabel");
+    const thinkingName = $("#thinkingName"), thinkingSub = $("#thinkingSub");
+    const footerModel = $("#footerModel"), themeBtn = $("#themeBtn"), motionBtn = $("#motionBtn"), cursorGlow = $("#cursorGlow");
 
+    let selectedModel = MODELS[0].id;
+    let selectedThinking = "medium";
     let messages = [];
     let lastUserPrompt = "";
+    let lastAssistantText = "";
+    let lastAssistantArticle = null;
     let activeController = null;
     let generating = false;
     let searchEnabled = false;
     let toastTimer = null;
-    let lastAssistantText = "";
+    let requestHadError = false;
 
-    // No API key is stored in this page. The backend must keep it server-side.
+    function safeGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+    function safeSet(key, value) { try { localStorage.setItem(key, value); } catch { /* storage can be unavailable */ } }
+
+    function applyTheme(theme) {
+      const nextTheme = theme === "light" ? "light" : "dark";
+      document.documentElement.dataset.theme = nextTheme;
+      themeBtn.textContent = nextTheme === "dark" ? "☀️" : "🌙";
+      themeBtn.setAttribute("aria-label", nextTheme === "dark" ? "Beralih ke Day Mode" : "Beralih ke Night Mode");
+      themeBtn.title = nextTheme === "dark" ? "Aktifkan Day Mode" : "Aktifkan Night Mode";
+      const themeColor = nextTheme === "dark" ? "#080b13" : "#eef3fb";
+      document.querySelector('meta[name="theme-color"]').setAttribute("content", themeColor);
+      safeSet("hyperai.theme", nextTheme);
+    }
+    function applyMotion(enabled) {
+      const active = Boolean(enabled);
+      document.documentElement.dataset.motion = active ? "advanced" : "basic";
+      motionBtn.setAttribute("aria-pressed", String(active));
+      motionBtn.textContent = active ? "✦ Advanced Motion: ON" : "✦ Advanced Motion: OFF";
+      motionBtn.title = active ? "Matikan animasi lanjutan" : "Aktifkan animasi dan motion lanjutan";
+      if (!active) cursorGlow.style.opacity = "0";
+      safeSet("hyperai.advancedMotion", active ? "on" : "off");
+    }
+    applyTheme(safeGet("hyperai.theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+    applyMotion(safeGet("hyperai.advancedMotion") === "on");
+    themeBtn.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+    motionBtn.addEventListener("click", () => applyMotion(document.documentElement.dataset.motion !== "advanced"));
     window.addEventListener("pointermove", (event) => {
-      if (!cursorGlow || event.pointerType === "touch") return;
+      if (document.documentElement.dataset.motion !== "advanced" || event.pointerType === "touch") return;
       cursorGlow.style.left = event.clientX + "px";
       cursorGlow.style.top = event.clientY + "px";
     }, { passive: true });
 
     closeModalBtn.addEventListener("click", () => {
       welcomeModal.classList.add("is-closing");
-      window.setTimeout(() => welcomeModal.remove(), 300);
-      promptInput.focus();
+      window.setTimeout(() => welcomeModal.remove(), 220);
+      promptInput.focus({ preventScroll: true });
     });
 
     function updateStatus(text, state = "") {
       statusText.textContent = text;
       statusDot.className = "status-dot" + (state ? ` ${state}` : "");
     }
-
     function showToast(message) {
       window.clearTimeout(toastTimer);
       toast.textContent = message;
       toast.classList.add("show");
-      toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+      toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
-    function updateModelInfo() {
-      const id = modelSelect.value;
-      const info = CHAT_MODELS[id] || CHAT_MODELS["openrouter/free"];
-      modelChip.textContent = info.group;
-      modelIdLabel.textContent = id;
-      thinkingHint.textContent = info.note;
-      footerModel.textContent = `Model: ${info.name}`;
-      try { localStorage.setItem("hyperai.model", id); } catch { /* storage may be unavailable */ }
+    function renderPickerOptions(menu, items, selectedId, onSelect, kind) {
+      menu.replaceChildren();
+      for (const item of items) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "picker-option";
+        button.setAttribute("role", "option");
+        button.setAttribute("aria-selected", String(item.id === selectedId));
+        button.dataset.value = item.id;
+        const icon = document.createElement("span");
+        icon.className = "option-icon";
+        icon.textContent = item.icon || "•";
+        const copy = document.createElement("span");
+        copy.className = "option-copy";
+        const title = document.createElement("span");
+        title.className = "option-title";
+        title.textContent = kind === "model" ? item.name : item.name;
+        const desc = document.createElement("span");
+        desc.className = "option-desc";
+        desc.textContent = kind === "model" ? item.description : item.subtitle;
+        const check = document.createElement("span");
+        check.className = "option-check";
+        check.textContent = "✓";
+        copy.append(title, desc);
+        button.append(icon, copy, check);
+        button.addEventListener("click", () => onSelect(item.id));
+        menu.appendChild(button);
+      }
     }
+    function closePickers(except = null) {
+      for (const [picker, trigger, menu] of [[modelPicker, modelTrigger, modelMenu], [thinkingPicker, thinkingTrigger, thinkingMenu]]) {
+        if (picker === except) continue;
+        picker.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+        menu.hidden = true;
+      }
+    }
+    function togglePicker(picker, trigger, menu) {
+      const shouldOpen = menu.hidden;
+      closePickers(picker);
+      menu.hidden = !shouldOpen;
+      picker.classList.toggle("open", shouldOpen);
+      trigger.setAttribute("aria-expanded", String(shouldOpen));
+      if (shouldOpen) {
+        const selected = menu.querySelector('[aria-selected="true"]');
+        (selected || menu.querySelector("button"))?.focus({ preventScroll: true });
+      }
+    }
+    function chooseModel(id) {
+      const selected = MODELS.find(model => model.id === id);
+      if (!selected) return;
+      selectedModel = selected.id;
+      modelName.textContent = selected.name;
+      modelSub.textContent = selected.short;
+      modelChip.textContent = selected.group;
+      modelIdLabel.textContent = selected.id;
+      footerModel.textContent = `Model: ${selected.name}`;
+      renderPickerOptions(modelMenu, MODELS, selectedModel, chooseModel, "model");
+      closePickers();
+      safeSet("hyperai.model", selectedModel);
+    }
+    function chooseThinking(id) {
+      const selected = THINKING_MODES.find(mode => mode.id === id);
+      if (!selected) return;
+      selectedThinking = selected.id;
+      thinkingName.textContent = selected.name;
+      thinkingSub.textContent = selected.subtitle;
+      renderPickerOptions(thinkingMenu, THINKING_MODES, selectedThinking, chooseThinking, "thinking");
+      closePickers();
+      safeSet("hyperai.thinking", selectedThinking);
+    }
+    modelTrigger.addEventListener("click", () => togglePicker(modelPicker, modelTrigger, modelMenu));
+    thinkingTrigger.addEventListener("click", () => togglePicker(thinkingPicker, thinkingTrigger, thinkingMenu));
+    document.addEventListener("click", (event) => {
+      if (!modelPicker.contains(event.target) && !thinkingPicker.contains(event.target)) closePickers();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        const hadOpen = !modelMenu.hidden || !thinkingMenu.hidden;
+        closePickers();
+        if (hadOpen) { modelTrigger.focus({ preventScroll: true }); event.stopPropagation(); }
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      const activeMenu = !modelMenu.hidden ? modelMenu : (!thinkingMenu.hidden ? thinkingMenu : null);
+      if (!activeMenu) return;
+      const options = [...activeMenu.querySelectorAll("button:not(:disabled)")];
+      if (!options.length) return;
+      const current = options.indexOf(document.activeElement);
+      let next = current;
+      if (event.key === "ArrowDown") next = (current + 1) % options.length;
+      if (event.key === "ArrowUp") next = (current - 1 + options.length) % options.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = options.length - 1;
+      event.preventDefault(); options[next]?.focus();
+    });
 
-    try {
-      const savedModel = localStorage.getItem("hyperai.model");
-      if (savedModel && CHAT_MODELS[savedModel]) modelSelect.value = savedModel;
-    } catch { /* storage may be unavailable */ }
-    modelSelect.addEventListener("change", updateModelInfo);
-    updateModelInfo();
+    const savedModel = safeGet("hyperai.model");
+    if (MODELS.some(model => model.id === savedModel)) selectedModel = savedModel;
+    const savedThinking = safeGet("hyperai.thinking");
+    if (THINKING_MODES.some(mode => mode.id === savedThinking)) selectedThinking = savedThinking;
+    renderPickerOptions(modelMenu, MODELS, selectedModel, chooseModel, "model");
+    renderPickerOptions(thinkingMenu, THINKING_MODES, selectedThinking, chooseThinking, "thinking");
+    chooseModel(selectedModel);
+    chooseThinking(selectedThinking);
 
     searchToggleBtn.addEventListener("click", () => {
       searchEnabled = !searchEnabled;
-      searchToggleBtn.textContent = searchEnabled ? "Cari di Web: AKTIF" : "Cari di Web: MATI";
-      searchToggleBtn.classList.toggle("primary", searchEnabled);
+      searchToggleBtn.textContent = searchEnabled ? "🌐 Web: AKTIF" : "🌐 Web: MATI";
+      searchToggleBtn.classList.toggle("search-active", searchEnabled);
       searchToggleBtn.setAttribute("aria-pressed", String(searchEnabled));
-      showToast(searchEnabled ? "Pencarian web diminta untuk respons berikutnya." : "Pencarian web dimatikan.");
+      showToast(searchEnabled ? "Pencarian web diminta untuk respons selanjutnya." : "Pencarian web dimatikan.");
     });
 
     function autoResize() {
@@ -436,82 +544,51 @@
     promptInput.addEventListener("input", autoResize);
     promptInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-        event.preventDefault();
-        sendMessage();
+        event.preventDefault(); sendMessage();
       }
     });
-
     function escapeHTML(value) {
       return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
     }
-
-    // Small dependency-free Markdown renderer for chat. This is intentionally not a full Markdown parser.
     function renderMarkdown(text) {
       let safe = escapeHTML(text);
-      const codeBlocks = [];
-      safe = safe.replace(/```([^\n]*)\n?([\s\S]*?)```/g, (_, language, block) => {
-        const index = codeBlocks.push({ language: language.trim(), body: block }) - 1;
-        return `@@CODEBLOCK_${index}@@`;
-      });
+      const blocks = [];
+      safe = safe.replace(/```([^\n]*)\n?([\s\S]*?)```/g, (_, language, body) => `@@CODE_${blocks.push({ language: language.trim(), body }) - 1}@@`);
       safe = safe.replace(/`([^`\n]+)`/g, "<code>$1</code>");
       safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
       safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
       safe = safe.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
         const cleaned = url.replace(/[),.!?]+$/, "");
-        const suffix = url.slice(cleaned.length);
-        return `<a href="${cleaned}" target="_blank" rel="noopener noreferrer">${cleaned}</a>${suffix}`;
+        return `<a href="${cleaned}" target="_blank" rel="noopener noreferrer">${cleaned}</a>${url.slice(cleaned.length)}`;
       });
       safe = safe.replace(/(^|\n)[ \t]*[-*] (.+)/g, "$1• $2");
-      safe = safe.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
-      safe = `<p>${safe}</p>`;
-      codeBlocks.forEach((entry, index) => {
-        const languageAttr = entry.language ? ` data-language="${escapeHTML(entry.language)}"` : "";
-        safe = safe.replace(`@@CODEBLOCK_${index}@@`, `<pre${languageAttr}><code>${entry.body}</code></pre>`);
+      safe = `<p>${safe.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
+      blocks.forEach((block, index) => {
+        const lang = block.language ? ` data-language="${escapeHTML(block.language)}"` : "";
+        safe = safe.replace(`@@CODE_${index}@@`, `<pre${lang}><code>${block.body}</code></pre>`);
       });
       return safe;
     }
-
     function createMessage(role, content = "") {
       if (welcome && welcome.isConnected) welcome.style.display = "none";
       const article = document.createElement("article");
       article.className = `message ${role}`;
-      const avatar = document.createElement("div");
-      avatar.className = "avatar";
-      avatar.textContent = role === "user" ? "YOU" : "AI";
-      avatar.setAttribute("aria-hidden", "true");
-      const wrap = document.createElement("div");
-      wrap.className = "bubble-wrap";
-      const meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = role === "user" ? "USER" : "HYPERAI SYSTEM";
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      if (content) bubble.innerHTML = renderMarkdown(content);
-      wrap.append(meta, bubble);
-      article.append(avatar, wrap);
-      chat.appendChild(article);
-      chat.scrollTop = chat.scrollHeight;
-      return bubble;
+      const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = role === "user" ? "YOU" : "AI"; avatar.setAttribute("aria-hidden", "true");
+      const wrap = document.createElement("div"); wrap.className = "bubble-wrap";
+      const meta = document.createElement("div"); meta.className = "meta"; meta.textContent = role === "user" ? "USER" : "HYPERAI";
+      const bubble = document.createElement("div"); bubble.className = "bubble"; if (content) bubble.innerHTML = renderMarkdown(content);
+      wrap.append(meta, bubble); article.append(avatar, wrap); chat.appendChild(article); chat.scrollTop = chat.scrollHeight;
+      return { article, bubble };
     }
-
-    function syncActionButtons() {
-      copyLastBtn.disabled = !lastAssistantText;
-      regenBtn.disabled = !lastUserPrompt || generating;
-    }
-
+    function syncActionButtons() { copyLastBtn.disabled = !lastAssistantText; regenBtn.disabled = !lastUserPrompt || generating; }
     function setGenerating(value) {
       generating = value;
-      sendBtn.style.display = value ? "none" : "grid";
-      stopBtn.style.display = value ? "grid" : "none";
-      promptInput.disabled = value;
-      modelSelect.disabled = value;
-      thinkingSelect.disabled = value;
-      searchToggleBtn.disabled = value;
-      clearBtn.disabled = value;
-      updateStatus(value ? "Sedang berpikir…" : "Siap", value ? "busy" : "ready");
+      sendBtn.style.display = value ? "none" : "grid"; stopBtn.style.display = value ? "grid" : "none";
+      promptInput.disabled = value; modelTrigger.disabled = value; thinkingTrigger.disabled = value;
+      searchToggleBtn.disabled = value; clearBtn.disabled = value;
+      updateStatus(value ? "Berpikir…" : "Siap", value ? "busy" : "");
       syncActionButtons();
     }
-
     async function readErrorResponse(response) {
       const contentType = response.headers.get("content-type") || "";
       try {
@@ -519,13 +596,9 @@
           const data = await response.json();
           return data?.error?.message || data?.error || data?.message || `HTTP ${response.status}`;
         }
-        const text = await response.text();
-        return text.trim().slice(0, 500) || `HTTP ${response.status}`;
-      } catch {
-        return `HTTP ${response.status}`;
-      }
+        return (await response.text()).trim().slice(0, 500) || `HTTP ${response.status}`;
+      } catch { return `HTTP ${response.status}`; }
     }
-
     function handleSSELine(line, appendDelta) {
       const normalized = line.replace(/\r$/, "");
       if (!normalized.startsWith("data:")) return false;
@@ -534,14 +607,12 @@
       if (payload === "[DONE]") return true;
       try {
         const json = JSON.parse(payload);
-        const delta = json?.choices?.[0]?.delta?.content;
+        const choice = json?.choices?.[0];
+        const delta = choice?.delta?.content;
         if (typeof delta === "string" && delta) appendDelta(delta);
         const upstreamError = json?.error?.message || json?.error;
         if (upstreamError) throw new Error(typeof upstreamError === "string" ? upstreamError : JSON.stringify(upstreamError));
-      } catch (error) {
-        if (error instanceof SyntaxError) return false;
-        throw error;
-      }
+      } catch (error) { if (error instanceof SyntaxError) return false; throw error; }
       return false;
     }
 
@@ -549,142 +620,85 @@
       if (generating) return;
       const prompt = String(customPrompt ?? promptInput.value).trim();
       if (!prompt) return;
-
       const skipUserBubble = Boolean(options.skipUserBubble);
-      lastUserPrompt = prompt;
-      lastAssistantText = "";
-      syncActionButtons();
-      if (!skipUserBubble) {
-        messages.push({ role: "user", content: prompt });
-        createMessage("user", prompt);
-      }
-      promptInput.value = "";
-      autoResize();
-
-      const aiBubble = createMessage("assistant");
+      lastUserPrompt = prompt; lastAssistantText = ""; lastAssistantArticle = null; syncActionButtons();
+      if (!skipUserBubble) { messages.push({ role: "user", content: prompt }); createMessage("user", prompt); }
+      promptInput.value = ""; autoResize();
+      const assistantMessage = createMessage("assistant");
+      const aiBubble = assistantMessage.bubble;
+      lastAssistantArticle = assistantMessage.article;
       aiBubble.innerHTML = '<span class="typing" aria-label="HyperAI sedang mengetik"><i></i><i></i><i></i></span>';
-      setGenerating(true);
-      activeController = new AbortController();
+      closePickers();
+      setGenerating(true); activeController = new AbortController();
       let fullText = "";
-
+      requestHadError = false;
       try {
         const response = await fetch(API_URL, {
-          method: "POST",
-          signal: activeController.signal,
+          method: "POST", signal: activeController.signal,
           headers: { "Content-Type": "application/json", "Accept": "text/event-stream, application/json" },
-          // The server owns the system prompt. Sending another system role here duplicated it before.
-          body: JSON.stringify({
-            model: modelSelect.value,
-            messages: messages.slice(-80),
-            thinkingLevel: thinkingSelect.value,
-            enableSearch: searchEnabled
-          })
+          body: JSON.stringify({ model: selectedModel, messages: messages.slice(-80), thinkingLevel: selectedThinking, enableSearch: searchEnabled })
         });
-
         if (!response.ok) throw new Error(await readErrorResponse(response));
         if (!response.body) throw new Error("Browser tidak menerima stream dari server.");
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        let doneSignal = false;
-        const appendDelta = (delta) => {
-          fullText += delta;
-          aiBubble.innerHTML = renderMarkdown(fullText);
-          chat.scrollTop = chat.scrollHeight;
-        };
-
+        const reader = response.body.getReader(); const decoder = new TextDecoder();
+        let buffer = "", doneSignal = false;
+        const appendDelta = (delta) => { fullText += delta; aiBubble.innerHTML = renderMarkdown(fullText); chat.scrollTop = chat.scrollHeight; };
         while (!doneSignal) {
           const result = await reader.read();
           if (result.done) break;
           buffer += decoder.decode(result.value, { stream: true });
-          let newlineIndex;
-          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-            const line = buffer.slice(0, newlineIndex);
-            buffer = buffer.slice(newlineIndex + 1);
+          let newline;
+          while ((newline = buffer.indexOf("\n")) !== -1) {
+            const line = buffer.slice(0, newline); buffer = buffer.slice(newline + 1);
             if (handleSSELine(line, appendDelta)) { doneSignal = true; break; }
           }
         }
         buffer += decoder.decode();
         if (buffer.trim() && !doneSignal) handleSSELine(buffer, appendDelta);
         try { await reader.cancel(); } catch { /* stream may already be closed */ }
-
         if (!fullText.trim()) throw new Error("Respons kosong. Model mungkin tidak kompatibel atau sedang tidak tersedia.");
-        messages.push({ role: "assistant", content: fullText });
-        lastAssistantText = fullText;
-        updateStatus("Siap", "ready");
+        messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText; updateStatus("Siap", "");
       } catch (error) {
         if (error?.name === "AbortError") {
           aiBubble.innerHTML = `<p><em>${fullText ? "Respons dihentikan. Teks yang sudah diterima belum disimpan ke riwayat model." : "Percakapan dihentikan."}</em></p>`;
         } else {
           aiBubble.innerHTML = `<p style="color:var(--danger)"><strong>Gagal:</strong> ${escapeHTML(error?.message || "Terjadi kesalahan yang tidak diketahui.")}</p>`;
-          showToast("Gagal memuat respons. Cek model/backend lalu coba lagi.");
-          updateStatus("Error", "error");
+          requestHadError = true;
+          showToast("Gagal memuat respons. Cek model/backend lalu coba lagi."); updateStatus("Error", "error");
         }
       } finally {
-        activeController = null;
-        setGenerating(false);
+        activeController = null; setGenerating(false);
+        if (requestHadError) updateStatus("Error", "error");
         promptInput.focus({ preventScroll: true });
       }
     }
-
     sendBtn.addEventListener("click", () => sendMessage());
     stopBtn.addEventListener("click", () => activeController?.abort());
-
     clearBtn.addEventListener("click", () => {
-      activeController?.abort();
-      messages = [];
-      lastUserPrompt = "";
-      lastAssistantText = "";
-      chat.replaceChildren(welcome);
-      welcome.style.display = "";
-      setGenerating(false);
-      updateStatus("Siap", "ready");
-      syncActionButtons();
-      showToast("Percakapan dibersihkan.");
+      activeController?.abort(); messages = []; lastUserPrompt = ""; lastAssistantText = ""; lastAssistantArticle = null;
+      chat.replaceChildren(welcome); welcome.style.display = ""; setGenerating(false); updateStatus("Siap", ""); syncActionButtons(); showToast("Percakapan dibersihkan.");
     });
-
     copyLastBtn.addEventListener("click", async () => {
       if (!lastAssistantText) return;
-      try {
-        await navigator.clipboard.writeText(lastAssistantText);
-        showToast("Jawaban terakhir disalin!");
-      } catch {
-        const temporary = document.createElement("textarea");
-        temporary.value = lastAssistantText;
-        temporary.setAttribute("readonly", "");
-        temporary.style.position = "fixed";
-        temporary.style.opacity = "0";
-        document.body.appendChild(temporary);
-        temporary.select();
-        let copied = false;
-        try { copied = document.execCommand("copy"); } catch { copied = false; }
-        temporary.remove();
-        showToast(copied ? "Jawaban terakhir disalin!" : "Clipboard tidak tersedia di browser ini.");
+      try { await navigator.clipboard.writeText(lastAssistantText); showToast("Jawaban terakhir disalin!"); }
+      catch {
+        const temporary = document.createElement("textarea"); temporary.value = lastAssistantText; temporary.setAttribute("readonly", "");
+        temporary.style.position = "fixed"; temporary.style.opacity = "0"; document.body.appendChild(temporary); temporary.select();
+        let copied = false; try { copied = document.execCommand("copy"); } catch { copied = false; }
+        temporary.remove(); showToast(copied ? "Jawaban terakhir disalin!" : "Clipboard tidak tersedia di browser ini.");
       }
     });
-
     regenBtn.addEventListener("click", () => {
       if (generating || !lastUserPrompt) return;
       if (messages.at(-1)?.role === "assistant") messages.pop();
-      const lastAssistantBubble = chat.querySelector(".message.assistant:last-of-type");
-      if (lastAssistantBubble) lastAssistantBubble.remove();
-      lastAssistantText = "";
-      syncActionButtons();
+      if (lastAssistantArticle?.isConnected) lastAssistantArticle.remove();
+      lastAssistantText = ""; lastAssistantArticle = null; syncActionButtons();
       sendMessage(lastUserPrompt, { skipUserBubble: true });
     });
-
-    document.querySelectorAll("[data-prompt]").forEach((button) => {
-      button.addEventListener("click", () => {
-        promptInput.value = button.dataset.prompt || "";
-        autoResize();
-        promptInput.focus();
-      });
-    });
-
-    updateStatus("Siap", "ready");
-    autoResize();
-    syncActionButtons();
+    document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => {
+      promptInput.value = button.dataset.prompt || ""; autoResize(); promptInput.focus();
+    }));
+    updateStatus("Siap", ""); autoResize(); syncActionButtons();
   </script>
 </body>
 </html>
