@@ -1,514 +1,308 @@
-# ⚡ HyperAI — OpenRouter Vercel Backend & Client
+# ⚡ HyperAI
 
-[![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-black?style=flat&logo=vercel)](https://vercel.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+**Think. Search. Build. Repeat.**
 
-**HyperAI** adalah web client AI mandiri bergaya cyberpunk yang terintegrasi dengan backend proxy OpenRouter melalui Vercel Serverless Functions. Project ini dirancang agar ringan, mulus, ramah pengguna awam, dan menyediakan berbagai fitur AI dalam satu interface tanpa mengharuskan pengguna memasukkan API key sendiri.
+HyperAI adalah web client AI bergaya cyberpunk yang mengakses model melalui **OpenRouter** dengan backend proxy berbasis **Vercel Serverless Functions**. Tujuannya adalah menyediakan antarmuka percakapan yang ringan dan mudah digunakan tanpa meminta setiap pengguna memasukkan API key OpenRouter mereka sendiri.
 
----
+> **Status:** Active Development — fitur, model yang tersedia, dan konfigurasi provider dapat berubah.
 
-## 🛠️ System Architecture
-
-```text
-┌───────────┐             ┌─────────────┐             ┌─────────────────────┐             ┌────────────┐
-│  Browser  │  ────────>  │  /api/chat  │  ────────>  │  Vercel Serverless  │  ────────>  │ OpenRouter │
-│  (Client) │   Payload   │  Endpoint   │    Proxy     │      Backend       │   API Key    │    API     │
-└───────────┘             └─────────────┘             └─────────────────────┘             └────────────┘
-```
-
-### 🔐 Request Flow
-
-```text
-User
- │
- ▼
-HyperAI Web Client
- │
- │ Prompt / Settings
- ▼
-/api/chat
- │
- │ Server-side API Request
- ▼
-Vercel Serverless Function
- │
- │ OPENROUTER_API_KEY
- ▼
-OpenRouter
- │
- ▼
-AI Model / Free Route
- │
- ▼
-Response
- │
- ▼
-HyperAI Client
-```
-
-API key OpenRouter tidak perlu ditanam di frontend karena request ke OpenRouter dilakukan melalui backend server-side.
+[![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-black?style=flat&logo=vercel)](https://vercel.com/new)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Powered by OpenRouter](https://img.shields.io/badge/AI%20Gateway-OpenRouter-6c5ce7?style=flat)](https://openrouter.ai/)
 
 ---
 
-# 🚀 Fitur Utama HyperAI
+## Daftar Isi
 
-## 🧠 5 Level Mode Berpikir (Thinking)
+- [Fitur](#-fitur)
+- [Arsitektur](#-arsitektur)
+- [Thinking Modes](#-thinking-modes)
+- [Web Search](#-web-search)
+- [Keamanan dan Batasan](#-keamanan-dan-batasan)
+- [Konfigurasi](#-konfigurasi-environment-variables)
+- [Menjalankan secara lokal](#-menjalankan-secara-lokal)
+- [Deployment ke Vercel](#-deployment-ke-vercel)
+- [Struktur Project](#-struktur-project)
+- [Troubleshooting](#-troubleshooting)
+- [Kontribusi dan Pelaporan Bug](#-kontribusi-dan-pelaporan-bug)
+- [Attribution](#-attribution)
+- [Kontak](#-kontak)
+- [Lisensi](#-lisensi)
 
-HyperAI menyediakan **5 level Thinking** untuk menyesuaikan intensitas reasoning yang diminta pengguna.
+## ✨ Fitur
 
-| Mode | Intensitas | Cocok Untuk |
+- **Chat UI cyberpunk** — antarmuka percakapan dengan fokus pada penggunaan yang sederhana.
+- **Backend proxy** — request ke OpenRouter dilakukan oleh server, bukan dengan menaruh secret API key di HTML atau JavaScript browser.
+- **Streaming response** — jawaban dapat ditampilkan secara bertahap ketika endpoint dan provider mendukung aliran respons.
+- **Thinking modes** — pilihan intensitas reasoning dari mode cepat sampai mode yang meminta reasoning lebih tinggi, jika didukung model/provider.
+- **Web Search opsional** — dapat diaktifkan melalui UI dan konfigurasi backend. Fitur ini bergantung pada dukungan serta biaya tool/provider yang digunakan.
+- **Validasi model di server** — backend dapat membatasi model yang diterima menggunakan allowlist.
+- **Custom interface** — welcome modal, quick prompts, kontrol chat, dan halaman error dapat disesuaikan sesuai aset serta implementasi yang ada di repository.
+
+> Ketersediaan setiap fitur mengikuti kode yang sedang di-deploy, konfigurasi environment, serta kemampuan model/provider. README ini bukan jaminan bahwa setiap fitur aktif pada semua deployment.
+
+## 🏗️ Arsitektur
+
+```text
+┌──────────────────────┐
+│ Browser / HyperAI UI │
+└──────────┬───────────┘
+           │ POST /api/chat
+           ▼
+┌──────────────────────┐
+│ Vercel Function      │
+│ api/chat.js          │
+│ - validate request   │
+│ - apply server rules │
+│ - keep API key secret│
+└──────────┬───────────┘
+           │ HTTPS + server-side key
+           ▼
+┌──────────────────────┐
+│ OpenRouter API        │
+│ selected model/route  │
+└──────────┬───────────┘
+           │ response / stream
+           ▼
+┌──────────────────────┐
+│ HyperAI UI            │
+└──────────────────────┘
+```
+
+Secara umum, client mengirim pesan dan pengaturan yang diperlukan ke endpoint `/api/chat`. Function backend memvalidasi input, menerapkan konfigurasi server, lalu meneruskan request ke OpenRouter. Responsnya dikirim kembali ke client.
+
+API key disimpan sebagai environment variable di Vercel, bukan sebagai nilai yang ditanam di source frontend. **Jangan menganggap proxy publik otomatis aman dari penyalahgunaan**: siapa pun yang dapat menjangkau endpoint mungkin dapat mencoba menggunakannya. Tambahkan autentikasi, rate limiting, kuota, atau perlindungan lain jika deployment dibuka untuk publik.
+
+## 🧠 Thinking Modes
+
+UI HyperAI menyediakan lima pilihan mode. Nama yang terlihat di UI dapat berbeda dari nilai teknis yang diteruskan backend.
+
+| Mode UI | Tujuan penggunaan | Catatan |
 |---|---|---|
-| ⚡ **Kilat** | Minimum | Pertanyaan sederhana dan respons cepat |
-| 🌙 **Santai** | Rendah | Percakapan umum dan tugas ringan |
-| ⚙️ **Standar** | Normal | Penggunaan sehari-hari, coding, analisis umum |
-| 🔍 **Teliti** | Tinggi | Debugging, analisis kompleks, dan problem solving |
-| 🧠 **Jenius** | Maksimal | Reasoning mendalam dan tugas multi-step |
+| ⚡ **Kilat** | Respons cepat untuk prompt sederhana | Reasoning eksplisit dapat dinonaktifkan atau tidak diminta. |
+| 🌙 **Santai** | Percakapan umum dan tugas ringan | Biasanya meminta reasoning rendah jika didukung. |
+| ⚙️ **Standar** | Pemakaian sehari-hari, coding, dan analisis umum | Menggunakan pengaturan normal sesuai pemetaan backend. |
+| 🔍 **Teliti** | Debugging dan problem solving bertahap | Meminta reasoning lebih tinggi jika tersedia. |
+| 🧠 **Jenius** | Tugas kompleks atau multi-step | Meminta tingkat reasoning tertinggi yang dipetakan backend; bukan jaminan hasil lebih baik. |
 
-### 🔧 Tingkatan Thinking
-
-```text
-⚡ KILAT
-   │
-   ▼
-🌙 SANTAI
-   │
-   ▼
-⚙️ STANDAR
-   │
-   ▼
-🔍 TELITI
-   │
-   ▼
-🧠 JENIUS
-```
-
-Semakin tinggi level Thinking yang dipilih, semakin besar tingkat reasoning yang diminta dari model, **selama model/provider yang digunakan mendukung parameter reasoning tersebut**.
-
-### 📌 Catatan Thinking
-
-Mode Thinking bukan berarti setiap level menggunakan model AI yang berbeda.
-
-Hasil akhir tetap bergantung pada:
-
-- Model yang sedang digunakan
-- Kemampuan reasoning model
-- Parameter reasoning yang didukung
-- Provider/model route yang tersedia
-- Kompleksitas prompt pengguna
-
-Jadi:
-
-```text
-Thinking Level
-      +
-Model Capability
-      +
-Prompt Complexity
-      =
-Final Response
-```
-
-Gunakan mode **Kilat/Santai** untuk pekerjaan ringan dan mode **Teliti/Jenius** ketika prompt membutuhkan analisis lebih panjang atau beberapa tahap penyelesaian.
-
----
+Thinking mode **tidak otomatis mengganti model**. Efeknya bergantung pada pemetaan di backend, dukungan parameter oleh model/provider, serta kompleksitas prompt. Provider dapat mengabaikan atau menolak parameter yang tidak didukung.
 
 ## 🌐 Web Search
 
-HyperAI menyediakan **Web Search** sebagai fitur opsional yang dapat digunakan ketika prompt membutuhkan informasi dari internet.
+Web Search bersifat opsional dan harus diizinkan oleh konfigurasi backend. Pada implementasi yang menggunakan OpenRouter server tool `openrouter:web_search`, model dapat meminta pencarian selama proses menjawab.
 
-Contoh penggunaan:
+Untuk mengaktifkannya:
 
-- Informasi terbaru
-- Data yang berubah dari waktu ke waktu
-- Referensi dari website
-- Pencarian informasi eksternal
-- Pertanyaan yang membutuhkan sumber online
+1. Atur `ENABLE_OPENROUTER_WEB_SEARCH=true` pada environment deployment.
+2. Pastikan UI mengirim pilihan Web Search yang sesuai.
+3. Deploy ulang jika diperlukan, lalu uji menggunakan prompt yang memang membutuhkan informasi web.
 
-### 🔘 Web Search Toggle
+**Perhatikan biaya:** jangan menganggap Web Search gratis hanya karena model chat yang dipilih bertanda `:free` atau menggunakan `openrouter/free`. Biaya tool pencarian, provider, dan pemakaian model dapat berbeda. Periksa [dokumentasi Web Search OpenRouter](https://openrouter.ai/tool/web-search/) dan [halaman pricing OpenRouter](https://openrouter.ai/pricing/) sebelum mengaktifkannya untuk pengguna lain.
 
-```text
-┌─────────────────────────┐
-│ 🌐 Web Search    [ ON ] │
-└─────────────────────────┘
-```
+Hasil pencarian juga dapat tidak tersedia, tidak lengkap, atau berubah. Pengguna sebaiknya memeriksa sumber asli untuk informasi penting.
 
-Pengguna dapat mengaktifkan atau menonaktifkan fitur pencarian sesuai kebutuhan.
+## 🛡️ Keamanan dan Batasan
 
-> ⚠️ Ketersediaan dan hasil Web Search bergantung pada konfigurasi backend, provider, model, serta layanan eksternal yang digunakan.
+### Secret management
 
----
+- Simpan `OPENROUTER_API_KEY` hanya di environment server-side.
+- Jangan commit `.env`, `.env.local`, token, atau secret lain.
+- Jangan menaruh API key server di `index.html`, file JavaScript frontend, screenshot, log publik, atau issue GitHub.
+- Jika key terlanjur dipublikasikan, cabut/rotasi key melalui akun OpenRouter.
 
-## 🛡️ Security
+### CORS dan `ALLOWED_ORIGIN`
 
-### 🔑 Zero Key Leakage
+`ALLOWED_ORIGIN` dapat membatasi origin browser yang diizinkan oleh kebijakan CORS backend. CORS **bukan autentikasi** dan tidak mencegah request non-browser atau request yang memalsukan header. Jangan menjadikan CORS sebagai satu-satunya perlindungan untuk endpoint yang memakai API key milik pemilik deployment.
 
-API key OpenRouter disimpan sebagai **environment variable server-side** dan tidak ditampilkan langsung pada client.
+### Model gratis dan routing
 
-```text
-❌ Browser
-   └── OPENROUTER_API_KEY
+Model `openrouter/free` memilih rute model gratis yang tersedia dan sesuai dengan kemampuan request. Namun, “gratis” tidak berarti kapasitas, uptime, kecepatan, atau kuota tanpa batas. Model gratis dapat berubah, penuh, dibatasi, atau tidak mendukung parameter tertentu. Periksa [katalog model gratis OpenRouter](https://openrouter.ai/collections/free-models) untuk status terkini.
 
-✅ Vercel Serverless
-   └── OPENROUTER_API_KEY
-```
+Backend sebaiknya hanya menerima model yang diizinkan allowlist di `api/chat.js`. Jangan mengandalkan validasi di browser karena request client dapat dimodifikasi.
 
-Frontend hanya mengirim request ke endpoint backend HyperAI.
+### Penggunaan yang bertanggung jawab
 
-### 🧱 Server-Side Proxy
+- Jangan gunakan HyperAI untuk uji DDoS, spam request, atau membebani layanan.
+- Jangan mengirim secret, kata sandi, atau informasi pribadi yang tidak perlu ke model AI.
+- Jangan menganggap output AI selalu akurat; verifikasi informasi penting dari sumber tepercaya.
+- Terapkan autentikasi dan rate limiting sebelum memberi akses publik berskala besar.
+- Pantau penggunaan, error, serta limit dari Vercel dan OpenRouter.
 
-```text
-Browser
-   │
-   ▼
-HyperAI /api/chat
-   │
-   ▼
-Vercel Serverless
-   │
-   ▼
-OpenRouter
-```
+## ⚙️ Konfigurasi Environment Variables
 
-Dengan arsitektur ini, client tidak perlu mengetahui secret API key milik backend.
+Atur variable berikut melalui **Vercel Dashboard → Project → Settings → Environment Variables**. Untuk pengembangan lokal, simpan variable pada file environment lokal yang tidak di-commit.
 
-### 🆓 Free Model Routing
+| Variable | Wajib? | Kegunaan |
+|---|---:|---|
+| `OPENROUTER_API_KEY` | Ya | Secret API key untuk request server-side ke OpenRouter. |
+| `OPENROUTER_APP_TITLE` | Tidak | Nama aplikasi untuk metadata/identitas aplikasi pada request OpenRouter. |
+| `PUBLIC_APP_URL` | Tidak | URL publik aplikasi yang dapat dipakai sebagai metadata request. Gunakan URL deployment yang benar. |
+| `ALLOWED_ORIGIN` | Tidak | Origin frontend yang diizinkan oleh kebijakan CORS. Contoh: `https://hyperai.example.com`. |
+| `ENABLE_OPENROUTER_WEB_SEARCH` | Tidak | Aktifkan tool Web Search hanya dengan nilai `true`; default sebaiknya tetap nonaktif. |
 
-Backend HyperAI dapat diarahkan ke route/model gratis sesuai konfigurasi project.
-
-Tujuannya adalah mengurangi risiko frontend secara tidak sengaja memilih model berbayar ketika project memang dimaksudkan untuk menggunakan jalur gratis.
-
-> ⚠️ **Catatan:** Status gratis, ketersediaan model, limit, serta routing provider tetap bergantung pada kebijakan dan kondisi layanan OpenRouter. Jangan menganggap layanan gratis sebagai resource tanpa batas.
-
-### 🌍 Origin Protection
-
-Variable `ALLOWED_ORIGIN` dapat digunakan untuk membatasi origin frontend yang diperbolehkan mengakses endpoint backend.
-
-Contoh:
+Contoh `.env.example`:
 
 ```env
-ALLOWED_ORIGIN=https://your-domain.vercel.app
-```
-
----
-
-## 🎬 Custom Error Pages
-
-HyperAI menyediakan halaman error custom untuk beberapa kondisi HTTP.
-
-| Status | Page |
-|---|---|
-| `404` | Not Found |
-| `403` | Forbidden |
-| `503` | Service Unavailable |
-
-Halaman error dapat dilengkapi dengan multimedia interaktif seperti:
-
-- 🎥 Background video
-- 🔊 Audio trigger
-- 🌐 Media dari Catbox atau YouTube
-- ✨ Animasi cyberpunk
-- 🖥️ Custom interface
-
-Contoh konsep:
-
-```text
-404
-┌────────────────────────────────────┐
-│                                    │
-│         PAGE NOT FOUND             │
-│                                    │
-│        [ BACK TO HYPERAI ]         │
-│                                    │
-│        🎬 Multimedia BG            │
-│        🔊 Audio Trigger             │
-│                                    │
-└────────────────────────────────────┘
-```
-
----
-
-## 📋 Welcome Modal Overlay
-
-Ketika website pertama kali dibuka, HyperAI dapat menampilkan **Welcome Modal** berisi informasi penting mengenai project.
-
-Informasi yang dapat ditampilkan meliputi:
-
-- 📜 Ketentuan penggunaan
-- 🛠️ Informasi project
-- 🤝 Kontak kolaborasi
-- 🌐 Sosial media
-- 💖 Informasi dukungan/donasi
-- ⚠️ Peringatan penggunaan layanan
-
-Tujuannya agar pengguna memahami cara penggunaan HyperAI sebelum mulai melakukan chat.
-
----
-
-# 🔒 Aturan Penggunaan (Rules)
-
-- Share project ini apabila HyperAI dirasa berguna untuk orang lain.
-- Berikan feedback dengan baik apabila menemukan bug atau kekurangan.
-- **DILARANG KERAS menggunakan HyperAI sebagai alat pengujian DDoS.**
-- Jangan melakukan spam request atau aktivitas yang sengaja membebani backend.
-- Gunakan resource backend secara wajar agar layanan tetap dapat digunakan.
-
-> 💀 DDoS test di endpoint sendiri memang kedengarannya "eksperimen", tapi jangan bikin serverless function berubah jadi korban perang saudara.
-
----
-
-# 📦 Environment Variables
-
-Environment variable berikut dapat dikonfigurasi melalui **Vercel Project Dashboard**.
-
-| Variable Name | Description | Required |
-|---|---|---|
-| `OPENROUTER_API_KEY` | API key resmi akun OpenRouter. | **Yes** |
-| `OPENROUTER_APP_TITLE` | Nama aplikasi untuk metadata/identitas aplikasi pada OpenRouter. | Optional |
-| `ALLOWED_ORIGIN` | Origin frontend yang diizinkan mengakses backend. | Recommended |
-
-### Example
-
-```env
-OPENROUTER_API_KEY=your_secret_key_here
+OPENROUTER_API_KEY=replace_with_your_own_key
 OPENROUTER_APP_TITLE=HyperAI
-ALLOWED_ORIGIN=https://your-domain.vercel.app
+PUBLIC_APP_URL=https://your-project.vercel.app
+ALLOWED_ORIGIN=https://your-project.vercel.app
+ENABLE_OPENROUTER_WEB_SEARCH=false
 ```
 
-### ⚠️ Security Warning
+`OPENROUTER_API_KEY` pada contoh di atas adalah placeholder, **bukan key yang valid**. Jangan isi file contoh ini dengan secret asli.
 
-**Jangan pernah commit API key asli ke GitHub.**
+### `.gitignore`
 
-Pastikan file berikut masuk ke `.gitignore`:
+Pastikan file rahasia dan hasil build lokal tidak ikut ter-commit. Contoh aturan yang umum:
 
 ```gitignore
 .env
 .env.*
 !.env.example
-node_modules/
 .vercel/
+node_modules/
 ```
 
-Gunakan `.env.example` untuk membagikan template configuration tanpa membocorkan secret.
+Sesuaikan dengan kebutuhan repository. Jika secret pernah masuk ke riwayat Git, menghapusnya dari commit terbaru saja tidak cukup—rotasi secret tetap diperlukan.
 
-Contoh:
+## 💻 Menjalankan secara Lokal
 
-```env
-OPENROUTER_API_KEY=your_secret_key_here
-OPENROUTER_APP_TITLE=HyperAI
-ALLOWED_ORIGIN=https://your-domain.vercel.app
-```
+### Prasyarat
 
----
+- Git
+- Node.js versi yang kompatibel dengan project
+- Akun OpenRouter dan API key
+- Vercel CLI untuk menjalankan Vercel Functions secara lokal
 
-# 💻 Local Deployment & Development
-
-## 1. Clone Repository
+### 1. Clone repository
 
 ```bash
 git clone https://github.com/Hanzet22/hyperai-openrouter-backend.git
 cd hyperai-openrouter-backend
 ```
 
----
+### 2. Siapkan konfigurasi environment
 
-## 2. Install Dependencies
-
-```bash
-npm install
-```
-
----
-
-## 3. Configure Environment
-
-Buat file `.env` di root project:
-
-```env
-OPENROUTER_API_KEY=your_secret_key_here
-OPENROUTER_APP_TITLE=HyperAI-Console
-ALLOWED_ORIGIN=http://localhost:3000
-```
-
-Jangan gunakan API key asli di source code frontend.
-
----
-
-## 4. Run Local Development
+Buat file environment lokal (misalnya `.env.local`) dan isi variable yang diperlukan. Jangan commit file tersebut. Jika project sudah terhubung ke Vercel, variable development juga dapat ditarik melalui CLI:
 
 ```bash
-npm run dev
+vercel link
+vercel env pull .env.local
 ```
 
-Atau gunakan Vercel CLI:
+Periksa isi file hasil pull secara lokal dan pastikan file tersebut di-ignore Git.
+
+### 3. Jalankan Vercel development server
+
+Instal Vercel CLI jika belum tersedia:
+
+```bash
+npm install --global vercel
+```
+
+Kemudian jalankan:
 
 ```bash
 vercel dev
 ```
 
----
+Ikuti instruksi CLI untuk menghubungkan repository dengan project Vercel. Jika `package.json` menyediakan script `dev` yang sesuai, `npm run dev` juga dapat digunakan; bila tidak, gunakan `vercel dev` untuk menguji routing function Vercel.
 
-# 🚀 Deploy ke Vercel
+## 🚀 Deployment ke Vercel
 
-### Install Vercel CLI
+1. Push repository ke GitHub.
+2. Import repository melalui [Vercel](https://vercel.com/new).
+3. Tambahkan environment variables yang diperlukan di Project Settings.
+4. Pastikan `OPENROUTER_API_KEY` terisi dan tidak pernah berada di source frontend.
+5. Deploy, lalu uji chat, streaming, model yang diizinkan, serta perilaku error.
+6. Aktifkan Web Search hanya jika diperlukan dan setelah mengecek biayanya.
 
-```bash
-npm i -g vercel
-```
+Project dapat menggunakan `vercel.json` untuk mengatur function, termasuk `maxDuration`. Nilai seperti `60` detik adalah batas maksimum invocation yang diminta konfigurasi, bukan jaminan setiap request selesai dalam waktu itu. Batas aktual mengikuti runtime dan plan Vercel. Lihat [dokumentasi konfigurasi function](https://vercel.com/docs/functions/configuring-functions) dan [maximum duration](https://vercel.com/docs/functions/configuring-functions/duration).
 
-### Login
+## 📁 Struktur Project
 
-```bash
-vercel login
-```
-
-### Deploy
-
-```bash
-vercel
-```
-
-Untuk production deployment:
-
-```bash
-vercel --prod
-```
-
-Pastikan environment variables sudah tersedia pada project Vercel sebelum deployment production.
-
----
-
-# 📁 Project Structure
-
-Struktur project dapat berkembang sesuai implementasi frontend/backend, tetapi secara umum pola HyperAI menggunakan arsitektur seperti:
+Struktur berikut adalah gambaran umum. Sesuaikan dengan isi repository yang benar-benar ada:
 
 ```text
 hyperai-openrouter-backend/
-│
 ├── api/
-│   └── chat.*
-│
-├── public/
-│   └── assets/
-│
-├── .env.example
+│   └── chat.js           # Serverless chat endpoint
+├── public/               # Static assets, jika digunakan
+├── index.html            # Web client, jika disimpan di root
+├── .env.example          # Template tanpa secret
 ├── .gitignore
-├── package.json
-├── vercel.json
-└── README.md
+├── vercel.json           # Konfigurasi Vercel, jika digunakan
+├── package.json          # Scripts/dependencies, jika diperlukan
+├── README.md
+├── ATTRIBUTIONS.md
+└── LICENSE
 ```
 
-> Struktur aktual dapat berbeda tergantung framework dan implementasi frontend yang digunakan.
+Beberapa file mungkin tidak ada atau berada di direktori lain. Dokumentasi ini tidak mengharuskan struktur di atas jika implementasi repository berbeda.
+
+## 🧪 Troubleshooting
+
+| Gejala | Hal yang diperiksa |
+|---|---|
+| `OPENROUTER_API_KEY` missing/invalid | Pastikan secret terpasang pada environment Vercel yang benar lalu redeploy. Jangan menaruh key di frontend. |
+| `401` atau `403` dari OpenRouter | Periksa key, akses model/provider, dan detail error dari server log. Jangan publikasikan log yang berisi secret. |
+| Model tidak tersedia | Pastikan ID model ada dalam allowlist backend dan masih tersedia di OpenRouter. |
+| Thinking mode tidak berpengaruh | Model/provider mungkin tidak mendukung parameter reasoning yang dikirim. |
+| Web Search tidak berjalan | Periksa `ENABLE_OPENROUTER_WEB_SEARCH`, pilihan UI, dukungan endpoint, serta log error dan biaya tool. |
+| Browser menampilkan CORS error | Periksa nilai `ALLOWED_ORIGIN`, protokol `https://`/`http://`, port lokal, dan origin yang benar-benar digunakan. |
+| Respons berhenti saat streaming | Periksa `maxDuration`, log function, status provider, koneksi client, dan batas layanan. |
+| Banyak request tak dikenal | CORS bukan proteksi penyalahgunaan. Batasi akses dan tambahkan rate limiting/autentikasi yang sesuai. |
+
+## 🤝 Kontribusi dan Pelaporan Bug
+
+Saran, laporan bug, dokumentasi, dan kontribusi kode sangat dihargai.
+
+Sebelum membuka issue:
+
+1. Jelaskan langkah reproduksi dan perilaku yang diharapkan.
+2. Sertakan pesan error yang sudah disamarkan jika relevan.
+3. Jangan sertakan API key, token, cookie, nomor telepon, atau data pribadi.
+4. Untuk perubahan kode, jelaskan alasan dan dampak perubahan.
+
+Pull request sebaiknya tetap fokus, dapat diuji, dan tidak memasukkan secret atau asset yang lisensinya tidak jelas.
+
+## 🧾 Attribution
+
+Layanan dan proyek pihak ketiga yang dirujuk oleh HyperAI tetap menjadi milik pemilik masing-masing. Rincian kredit, lisensi, serta panduan pencatatan asset tersedia di [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
+
+## 🌐 Kontak
+
+**Project:** HyperAI  
+**Developer:** HyperGaruda (`Hanzet22`)
+
+- GitHub: [Hanzet22](https://github.com/Hanzet22)
+- Instagram: [@muhamad_farhannn_](https://www.instagram.com/muhamad_farhannn_/)
+- Douyin: [Profile link](https://v.douyin.com/P0Qx2tl0KSA/)
+- Behance: [farhanzet_22](https://www.behance.net/farhanzet_22)
+- Telegram: [@Hypergaruda](https://t.me/Hypergaruda)
+- Email kolaborasi: `hypergarudatkj@gmail.com`
+
+Untuk keselamatan dan privasi, hindari memublikasikan nomor telepon pribadi, nomor pembayaran, atau alamat rumah di dokumentasi repository. Gunakan kanal kontak proyek yang memang siap menerima pesan publik.
+
+## 📜 Lisensi
+
+Kode project ini dinyatakan menggunakan **MIT License**. Lihat file [`LICENSE`](LICENSE). Lisensi project tidak otomatis mencakup merek dagang, layanan, model AI, atau asset pihak ketiga; ketentuan masing-masing tetap berlaku.
 
 ---
 
-# 🧪 Development Notes
-
-HyperAI dirancang dengan prinsip:
-
-```text
-Lightweight
-    +
-Serverless
-    +
-Secure API Handling
-    +
-Free Model Routing
-    +
-Interactive UI
-    =
-HyperAI
-```
-
-Fokus utama project:
-
-- ⚡ Respons cepat
-- 🧩 Arsitektur sederhana
-- 🔐 Secret tetap server-side
-- 🧠 Adjustable Thinking
-- 🌐 Optional Web Search
-- 🎬 Interactive Error Pages
-- 📱 User-friendly interface
-
----
-
-# 🌐 Sosial Media & Kontak Pengembang
-
-**Dibuat Oleh:** HyperGaruda (Hanzet22)
-
-- **Instagram:** `@muhamad_farhannn_`
-- **Douyin:** `https://v.douyin.com/P0Qx2tl0KSA/`
-- **GitHub:** `Hanzet22`
-- **Behance:** `farhanzet_22`
-- **Discord Private DM:** `hgi.id`
-- **Discord Collaboration:** `hgi_official`
-- **Telegram:** `@Hypergaruda`
-- **WhatsApp:** `wa.me/6285272995674`
-- **Email Collaboration:** `hypergarudatkj@gmail.com`
-
----
-
-# 💖 Donasi
-
-Jika HyperAI membantu atau mendukung project Anda dan ingin ikut mendukung pengembangannya:
-
-### DANA / GOPAY
-
-```text
-085272995674
-```
-
-Donasi dapat digunakan untuk membantu maintenance, eksperimen fitur, infrastructure, dan pengembangan HyperAI.
-
----
-
-# ⚠️ Disclaimer
-
-HyperAI adalah project independen yang menggunakan OpenRouter sebagai gateway/provider API.
-
-HyperAI tidak menjamin:
-
-- Ketersediaan model tertentu
-- Uptime provider eksternal
-- Limit penggunaan gratis
-- Hasil reasoning tertentu
-- Ketersediaan Web Search
-- Routing provider tertentu
-
-Semua layanan eksternal mengikuti kebijakan, limit, dan perubahan yang diberlakukan oleh masing-masing provider.
-
----
-
-# 📜 License
-
-This project is licensed under the **MIT License**.
-
-See the `LICENSE` file for more information.
-
----
-
-# ⚡ HyperAI
+<div align="center">
 
 ```text
 ╔══════════════════════════════════════╗
-║              HYPERAI                 ║
+║               HYPERAI                ║
 ║                                      ║
-║   Think. Search. Build. Repeat.      ║
+║      Think. Search. Build. Repeat.   ║
 ║                                      ║
-║      Powered through OpenRouter      ║
-║          Deployed on Vercel          ║
+║    OpenRouter-powered · Vercel-hosted║
 ╚══════════════════════════════════════╝
 ```
 
-**Built with passion by HyperGaruda.**
+**Push the Limitation. Push the Creativity. Make The New Era.** ⚡
 
-Keeping AI conversations flowing through a lightweight, accessible, and independently built interface.
-
----
-
-## 🚧 Project Status
-
-**Active Development**
-
-HyperAI masih terus dikembangkan. Fitur, model routing, UI, backend logic, dan integrasi tambahan dapat berubah seiring perkembangan project.
-
-> **Push the Limitation. Push the Creativity. Make The New Era.** ⚡
+</div>
