@@ -1,7 +1,10 @@
 {
   "functions": {
-    "api/chat.js": {
-      "maxDuration": 60
-    }
+    "api/chat.js": { "maxDuration": 60 },
+    "api/decisions.js": { "maxDuration": 30 },
+    "api/embeddings.js": { "maxDuration": 30 },
+    "api/rerank.js": { "maxDuration": 30 },
+    "api/moderate.js": { "maxDuration": 30 },
+    "api/speech.js": { "maxDuration": 60 }
   }
 }
