@@ -186,8 +186,56 @@
     .modal-header { padding: 17px 19px 13px; border-bottom: 1px solid var(--line); }
     .modal-header h2 { color: var(--accent); font-size: 14px; }
     .modal-body { overflow: auto; padding: 16px 19px; color: var(--muted); font-size: 12px; line-height: 1.7; }
-    .modal-body p, .modal-body ul { margin-bottom: 11px; }
-    .modal-body ul { padding-left: 21px; }
+    .modal-body p,
+.modal-body ul,
+.modal-body ol {
+  margin-bottom: 11px;
+}
+
+.modal-body ul,
+.modal-body ol {
+  padding-left: 22px;
+}
+
+.modal-body li {
+  margin-bottom: 9px;
+}
+
+.modal-body li:last-child {
+  margin-bottom: 0;
+}
+
+.modal-body h3 {
+  margin: 18px 0 10px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.modal-body .privacy-heading {
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: .01em;
+}
+
+.modal-body .privacy-tagline {
+  color: var(--success);
+  font-weight: 800;
+}
+
+.modal-body .privacy-warning {
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 32%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--danger) 7%, var(--panel-solid));
+}
+
+.modal-body .privacy-reminder {
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel-solid));
+}
     .modal-body a { color: var(--accent); overflow-wrap: anywhere; }
     .modal-footer { padding: 12px 19px 16px; border-top: 1px solid var(--line); }
     .modal-btn { width: 100%; min-height: 42px; border: 1px solid color-mix(in srgb, var(--success) 40%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--success) 9%, var(--panel-solid)); color: var(--success); font-size: 11px; font-weight: 850; cursor: pointer; transition: transform .2s, background .2s; }
@@ -247,19 +295,125 @@
   <div id="welcomeModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <section class="modal-box">
       <header class="modal-header"><h2 id="modalTitle">⚡ Informasi &amp; Ketentuan HyperAI</h2></header>
-      <div class="modal-body">
-        <p><strong>Selamat datang di HyperAI</strong>, dibuat oleh HyperGaruda. Aplikasi ini menggunakan OpenRouter sebagai agregator model. Model gratis dapat mengalami batas penggunaan, antrean, atau perubahan ketersediaan.</p>
-        <p><strong>Aturan utama:</strong></p>
-        <ul><li>Bagikan jika bermanfaat.</li><li>Sampaikan feedback dengan baik jika menemukan kekurangan.</li><li><strong>Dilarang menggunakan layanan ini untuk pengujian DDoS atau aktivitas yang mengganggu layanan.</strong></li></ul>
-        <p><strong>Media sosial:</strong><br><a href="https://www.instagram.com/muhamad_farhannn_" target="_blank" rel="noopener noreferrer">Instagram</a><br><a href="https://v.douyin.com/P0Qx2tl0KSA/" target="_blank" rel="noopener noreferrer">Douyin</a></p>
-        <p><strong>Proyek:</strong><br><a href="https://github.com/Hanzet22" target="_blank" rel="noopener noreferrer">GitHub</a><br><a href="https://www.behance.net/farhanzet_22" target="_blank" rel="noopener noreferrer">Behance</a></p>
-        <p><strong>Kontak:</strong><br>Email: farhanzet4@gmail.com<br>Telegram: @Hypergaruda<br>WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a></p>
-        <p><strong>Private DM:</strong><br>Discord: hgi.id</p>
-        <p><strong>Kolaborasi:</strong><br>Email: hypergarudatkj@gmail.com<br>Telegram: @Hypergaruda<br>Discord: hgi_official<br>WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a></p>
-        <p><strong>Donasi sukarela:</strong><br>DANA / GoPay: 085272995674</p>
-        <p><strong>Privasi:</strong> Jangan masukkan kata sandi, API key, data pribadi sensitif, atau informasi rahasia ke layanan AI pihak ketiga. Penyedia model dapat menangani prompt dan respons sesuai kebijakan masing-masing.</p>
-        <p>Terima kasih dan selamat menggunakan HyperAI! ⚡</p>
-      </div>
+      
+<div class="modal-body">
+  <p><strong>Selamat datang di HyperAI</strong>, dibuat oleh HyperGaruda. Aplikasi ini menggunakan OpenRouter sebagai agregator model AI. Model gratis dapat mengalami batas penggunaan, antrean, atau perubahan ketersediaan.</p>
+
+  <h3>Aturan Utama HyperAI</h3>
+  <ul>
+    <li>Bagikan HyperAI jika bermanfaat.</li>
+    <li>Sampaikan feedback dengan baik jika menemukan kekurangan.</li>
+    <li><strong>Dilarang menggunakan layanan ini untuk pengujian DDoS atau aktivitas yang mengganggu layanan.</strong></li>
+  </ul>
+
+  <h3 class="privacy-heading">🛡️ HYPERAI — PRIVACY &amp; DATA SAFETY NOTICE</h3>
+  <p class="privacy-tagline">Privacy is Not Optional.</p>
+
+  <h3>⚠️ Peringatan Privasi dan Keamanan Data</h3>
+  <p>HyperAI menggunakan layanan AI melalui OpenRouter dan penyedia model pihak ketiga. Input yang Anda kirim akan diproses untuk menghasilkan respons. Kebijakan penyimpanan, logging, dan penggunaan data untuk pelatihan dapat berbeda bergantung pada model, penyedia, serta konfigurasi layanan.</p>
+  <p class="privacy-warning"><strong>Jangan menganggap percakapan Anda sebagai tempat penyimpanan data rahasia.</strong> Demi melindungi privasi dan keamanan Anda maupun orang lain, hindari memasukkan informasi berikut.</p>
+
+  <h3>🚫 Data yang Tidak Boleh Dikirim</h3>
+  <ol>
+    <li>
+      <strong>API Key dan Secret Credentials</strong><br>
+      Jangan memasukkan API key, access token, refresh token, private key, password, cookie sesi, atau kredensial lainnya, termasuk yang sudah kedaluwarsa, dicabut, atau dihapus dari konfigurasi.
+    </li>
+    <li>
+      <strong>Data Pribadi dan Identitas</strong><br>
+      Jangan mengirim NIK, nomor KK, nomor paspor, identitas siswa, data biometrik, atau informasi lain yang dapat mengidentifikasi seseorang tanpa alasan dan kewenangan yang sah.
+    </li>
+    <li>
+      <strong>Alamat dan Lokasi Pribadi</strong><br>
+      Hindari membagikan alamat rumah, lokasi real-time, rutinitas harian, lokasi sekolah, atau informasi yang dapat membantu seseorang menemukan maupun melacak Anda atau orang lain.
+    </li>
+    <li>
+      <strong>Penyebaran Informasi Pribadi</strong><br>
+      Dilarang menggunakan HyperAI untuk melakukan doxxing, mengungkap identitas anonim, melacak seseorang tanpa hak, atau menyebarkan informasi pribadi tanpa izin yang sah.
+    </li>
+    <li>
+      <strong>Jailbreak dan Manipulasi Sistem</strong><br>
+      Jangan mengirim instruksi yang bertujuan membobol pengamanan AI, mencuri kredensial, membocorkan rahasia sistem, atau memaksa model mengabaikan perlindungan keselamatannya.
+    </li>
+    <li>
+      <strong>Dokumen Sensitif dan Rahasia</strong><br>
+      Jangan mengunggah dokumen medis, catatan keuangan, berkas hukum, rapor, dokumen identitas, arsip perusahaan, atau dokumen rahasia milik sekolah maupun organisasi yang mengandung informasi sensitif.
+    </li>
+    <li>
+      <strong>Kode Sumber dan Konfigurasi Internal</strong><br>
+      Jangan mengirim source code privat, file <code>.env</code>, konfigurasi produksi, log server, database dump, atau screenshot terminal yang masih mengandung token dan informasi rahasia.
+    </li>
+    <li>
+      <strong>Informasi Pribadi Anak dan Pihak Rentan</strong><br>
+      Jangan membagikan nama lengkap, foto, kontak, jadwal, lokasi, atau informasi pribadi anak dan pihak rentan yang dapat membahayakan keselamatan maupun privasinya.
+    </li>
+    <li>
+      <strong>File, Screenshot, dan Metadata</strong><br>
+      Periksa gambar, PDF, rekaman suara, video, serta file yang akan dikirim. Isinya mungkin mengungkap wajah, dokumen, lokasi, nama file, atau informasi lain yang tidak sengaja terlihat.
+    </li>
+    <li>
+      <strong>Informasi Rahasia Milik Orang Lain</strong><br>
+      Jangan memasukkan percakapan pribadi, data pelanggan, kredensial rekan kerja, atau materi rahasia milik orang lain tanpa otorisasi yang sesuai.
+    </li>
+    <li>
+      <strong>Keputusan Berisiko Tinggi</strong><br>
+      Jangan mengandalkan satu respons AI sebagai satu-satunya dasar untuk keputusan medis, hukum, finansial, keselamatan, atau keputusan penting lainnya.
+    </li>
+    <li>
+      <strong>Konten Berbahaya dan Penyalahgunaan</strong><br>
+      Jangan menggunakan HyperAI untuk penipuan, pencurian data, penyalahgunaan identitas, eksploitasi orang lain, atau aktivitas yang membahayakan keselamatan dan keamanan sistem.
+    </li>
+  </ol>
+
+  <h3>🔐 Ingat Sebelum Mengirim</h3>
+  <ul>
+    <li>Gunakan data contoh atau data yang telah disamarkan saat meminta bantuan debugging.</li>
+    <li>Hapus kredensial dan informasi identitas dari dokumen sebelum dianalisis.</li>
+    <li>Periksa kebijakan privasi model dan penyedia yang digunakan.</li>
+    <li>Jika kredensial terlanjur terekspos, cabut atau rotasi kredensial tersebut sesegera mungkin. Menghapus pesan atau mencabut key tidak otomatis menjamin bahwa seluruh salinan data sudah terhapus dari setiap sistem.</li>
+    <li>Jangan memasukkan informasi yang Anda tidak berwenang untuk bagikan.</li>
+  </ul>
+
+  <h3>🤝 Komitmen HyperAI</h3>
+  <p>Privasi bukan sekadar fitur, melainkan prinsip yang harus dipertimbangkan dalam penggunaan teknologi AI. Lindungi data Anda, hormati privasi orang lain, dan gunakan layanan secara bertanggung jawab.</p>
+  <p class="privacy-tagline">Your Privacy Is Your Right. Protect It.</p>
+  <p class="privacy-tagline">Privacy is Not Optional.</p>
+
+  <h3>Media Sosial</h3>
+  <p>
+    <a href="https://www.instagram.com/muhamad_farhannn_" target="_blank" rel="noopener noreferrer">Instagram</a><br>
+    <a href="https://v.douyin.com/P0Qx2tl0KSA/" target="_blank" rel="noopener noreferrer">Douyin</a>
+  </p>
+
+  <h3>Proyek</h3>
+  <p>
+    <a href="https://github.com/Hanzet22" target="_blank" rel="noopener noreferrer">GitHub</a><br>
+    <a href="https://www.behance.net/farhanzet_22" target="_blank" rel="noopener noreferrer">Behance</a>
+  </p>
+
+  <h3>Kontak</h3>
+  <p>
+    Email: farhanzet4@gmail.com<br>
+    Telegram: @Hypergaruda<br>
+    WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
+  </p>
+
+  <h3>Private DM</h3>
+  <p>Discord: hgi.id</p>
+
+  <h3>Kolaborasi</h3>
+  <p>
+    Email: hypergarudatkj@gmail.com<br>
+    Telegram: @Hypergaruda<br>
+    Discord: hgi_official<br>
+    WhatsApp: <a href="https://wa.me/6285272995674" target="_blank" rel="noopener noreferrer">Hubungi via WhatsApp</a>
+  </p>
+
+  <h3>Donasi Sukarela</h3>
+  <p>DANA / GoPay: 085272995674</p>
+
+  <p>Terima kasih dan selamat menggunakan HyperAI! ⚡</p>
+</div>
       <footer class="modal-footer"><button id="closeModalBtn" class="modal-btn" type="button">MENGERTI, LANJUT MASUK →</button></footer>
     </section>
   </div>
