@@ -181,6 +181,9 @@ import { handleSSEEvent } from "./sse.js";
     document.addEventListener("click", (event) => {
       if (!modelPicker.contains(event.target) && !thinkingPicker.contains(event.target)) closePickers();
     });
+    document.addEventListener("focusin", (event) => {
+      if (!modelPicker.contains(event.target) && !thinkingPicker.contains(event.target)) closePickers();
+    });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         const activeTrigger = !modelMenu.hidden ? modelTrigger : (!thinkingMenu.hidden ? thinkingTrigger : null);
