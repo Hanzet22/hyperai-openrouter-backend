@@ -233,7 +233,7 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
         event.preventDefault(); sendMessage();
       }
     });
-        function createMessage(role, content = "") {
+    function createMessage(role, content = "") {
       if (welcome && welcome.isConnected) welcome.style.display = "none";
       const article = document.createElement("article");
       article.className = `message ${role}`;
