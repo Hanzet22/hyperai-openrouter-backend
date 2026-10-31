@@ -57,9 +57,9 @@ test("decodes frames split across arbitrary network chunks", () => {
 test("handles CRLF separators split between chunks", () => {
   const chunks = [];
   const stream = new SSEStreamDecoder(value => chunks.push(value));
-  stream.push('data: {"choices":[{"delta":{"content":"line"}}]}\\r');
-  stream.push("\\n\\r");
-  stream.push("\\n");
+  stream.push('data: {"choices":[{"delta":{"content":"line"}}]}\r');
+  stream.push("\n\r");
+  stream.push("\n");
   assert.deepEqual(chunks, ["line"]);
   assert.equal(stream.finish(), false);
 });
