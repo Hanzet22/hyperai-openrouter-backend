@@ -23,7 +23,9 @@ test("creates only HTTP and HTTPS links with safe new-window attributes", () => 
 });
 
 test("keeps HTML escaped inside fenced code blocks and language metadata", () => {
-  const output = renderMarkdown('\\`\\`\\`html\\n<img src=x onerror="alert(1)">\\n\\`\\`\\`');
+  const output = renderMarkdown(String.raw\`\`\`html
+<img src=x onerror="alert(1)">
+\`\`\`);
   assert.ok(output.includes('<pre data-language="html"><code>&lt;img src=x onerror=&quot;alert(1)&quot;&gt;'));
   assert.ok(!output.includes("<img"));
 });
