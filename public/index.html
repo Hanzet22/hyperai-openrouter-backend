@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/css/houdini.css">
 </head>
 <body>
+  <a class="skip-link" href="#prompt">Lewati ke kolom pesan</a>
   <div class="backdrop" aria-hidden="true"><div class="orb one"></div><div class="orb two"></div><div class="orb three"></div></div>
   <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
 
@@ -158,7 +159,7 @@
       <div class="control">
         <span class="control-label" id="modelLabel">🤖 Model AI</span>
         <div id="modelPicker" class="picker">
-          <button id="modelTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="modelLabel modelName">
+          <button id="modelTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="modelLabel modelName" aria-controls="modelMenu">
             <span class="picker-copy"><span id="modelName" class="picker-main">Nemotron 3.5 Super VL</span><span id="modelSub" class="picker-sub">NVIDIA · Free endpoint</span></span><span class="chevron" aria-hidden="true"></span>
           </button>
           <div id="modelMenu" class="picker-menu" role="listbox" aria-label="Pilih model AI" hidden></div>
@@ -167,7 +168,7 @@
       <div class="control">
         <span class="control-label" id="thinkingLabel">🧠 Mode Berpikir</span>
         <div id="thinkingPicker" class="picker">
-          <button id="thinkingTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="thinkingLabel thinkingName">
+          <button id="thinkingTrigger" class="picker-trigger" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="thinkingLabel thinkingName" aria-controls="thinkingMenu">
             <span class="picker-copy"><span id="thinkingName" class="picker-main">⚖️ Standar · Medium</span><span id="thinkingSub" class="picker-sub">Balanced reasoning effort</span></span><span class="chevron" aria-hidden="true"></span>
           </button>
           <div id="thinkingMenu" class="picker-menu" role="listbox" aria-label="Pilih mode berpikir" hidden></div>
