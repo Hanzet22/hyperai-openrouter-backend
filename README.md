@@ -267,6 +267,21 @@ Sebelum membuka issue:
 
 Pull request sebaiknya tetap fokus, dapat diuji, dan tidak memasukkan secret atau asset yang lisensinya tidak jelas.
 
+## ⚖️ Legal, Privacy, and Security Notices
+
+The following documents are **drafts for legal review**, not proof of regulatory compliance. They contain placeholders that must be completed by the adult legal operator before public release:
+
+- [Privacy Notice](PRIVACY.md)
+- [Terms of Use](TERMS.md)
+- [Cookie and Browser Storage Notice](COOKIE-NOTICE.md)
+- [Security Policy](SECURITY.md)
+- [Project Notices](NOTICE.md)
+- [Third-party Attributions](ATTRIBUTIONS.md)
+- [Internal Data Inventory](docs/legal-data-inventory.md)
+- [Legal Readiness Checklist](docs/legal-readiness-checklist.md)
+
+**Eligibility:** the current OpenRouter Terms require users to be at least 18 years old. The current OpenRouter-backed HyperAI integration must not be offered to under-18 users unless OpenRouter gives written authorization that expressly permits the intended arrangement. An adult operator with authority to accept the provider terms is required.
+
 ## 🧾 Attribution
 
 Layanan dan proyek pihak ketiga yang dirujuk oleh HyperAI tetap menjadi milik pemilik masing-masing. Rincian kredit, lisensi, serta panduan pencatatan asset tersedia di [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
