@@ -1,6 +1,6 @@
 import { initHoudini } from "./houdini.js";
 import { initAmbientVisuals } from "./visuals.js";
-import { handleSSEEvent } from "./sse.js";
+import { SSEStreamDecoder } from "./sse.js";
 
     "use strict";
 
@@ -310,21 +310,15 @@ import { handleSSEEvent } from "./sse.js";
         if (!response.ok) throw new Error(await readErrorResponse(response));
         if (!response.body) throw new Error("Browser tidak menerima stream dari server.");
         const reader = response.body.getReader(); const decoder = new TextDecoder();
-        let buffer = "", doneSignal = false;
         const appendDelta = (delta) => { fullText += delta; aiBubble.innerHTML = renderMarkdown(fullText); chat.scrollTop = chat.scrollHeight; };
-        while (!doneSignal) {
+        const streamDecoder = new SSEStreamDecoder(appendDelta);
+        while (!streamDecoder.done) {
           const result = await reader.read();
           if (result.done) break;
-          buffer += decoder.decode(result.value, { stream: true });
-          let boundary;
-          while ((boundary = buffer.match(/\r?\n\r?\n/)) !== null) {
-            const eventText = buffer.slice(0, boundary.index);
-            buffer = buffer.slice(boundary.index + boundary[0].length);
-            if (handleSSEEvent(eventText, appendDelta)) { doneSignal = true; break; }
-          }
+          streamDecoder.push(decoder.decode(result.value, { stream: true }));
         }
-        buffer += decoder.decode();
-        if (buffer.trim() && !doneSignal) handleSSEEvent(buffer, appendDelta);
+        streamDecoder.push(decoder.decode());
+        streamDecoder.finish();
         try { await reader.cancel(); } catch { /* stream may already be closed */ }
         if (!fullText.trim()) throw new Error("Respons kosong. Model mungkin tidak kompatibel atau sedang tidak tersedia.");
         messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText; updateStatus("Siap", "");
