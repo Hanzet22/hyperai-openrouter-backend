@@ -226,12 +226,20 @@ export function initAmbientVisuals() {
     motionObserver.disconnect();
     document.removeEventListener("visibilitychange", handleVisibility);
     window.removeEventListener("resize", handleResize);
+    window.removeEventListener("pagehide", handlePageHide);
+    window.removeEventListener("pageshow", handlePageShow);
     motionPreference?.removeEventListener?.("change", handlePreference);
   };
+  const handlePageHide = (event) => {
+    if (event.persisted) stop();
+    else cleanup();
+  };
+  const handlePageShow = () => start();
 
   document.addEventListener("visibilitychange", handleVisibility);
   window.addEventListener("resize", handleResize, { passive: true });
+  window.addEventListener("pagehide", handlePageHide);
+  window.addEventListener("pageshow", handlePageShow);
   motionPreference?.addEventListener?.("change", handlePreference);
-  window.addEventListener("pagehide", cleanup, { once: true });
   start();
 }
