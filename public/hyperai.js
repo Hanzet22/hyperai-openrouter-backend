@@ -1,5 +1,6 @@
 import { initHoudini } from "./houdini.js";
 import { initAmbientVisuals } from "./visuals.js";
+import { handleSSEEvent } from "./sse.js";
 
     "use strict";
 
@@ -280,25 +281,6 @@ import { initAmbientVisuals } from "./visuals.js";
         return (await response.text()).trim().slice(0, 500) || `HTTP ${response.status}`;
       } catch { return `HTTP ${response.status}`; }
     }
-    function handleSSEEvent(eventText, appendDelta) {
-      const dataLines = eventText.split(/\r?\n/)
-        .filter(line => line.startsWith("data:"))
-        .map(line => line.slice(5).replace(/^ /, ""));
-      if (!dataLines.length) return false;
-      const payload = dataLines.join("\n").trim();
-      if (!payload) return false;
-      if (payload === "[DONE]") return true;
-      try {
-        const json = JSON.parse(payload);
-        const choice = json?.choices?.[0];
-        const delta = choice?.delta?.content;
-        if (typeof delta === "string" && delta) appendDelta(delta);
-        const upstreamError = json?.error?.message || json?.error;
-        if (upstreamError) throw new Error(typeof upstreamError === "string" ? upstreamError : JSON.stringify(upstreamError));
-      } catch (error) { if (error instanceof SyntaxError) return false; throw error; }
-      return false;
-    }
-
     async function sendMessage(customPrompt = null, options = {}) {
       if (generating) return;
       const prompt = String(customPrompt ?? promptInput.value).trim();
