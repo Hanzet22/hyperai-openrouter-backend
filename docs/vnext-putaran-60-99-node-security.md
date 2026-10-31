@@ -25,6 +25,8 @@ Sources:
 ## Changes delivered
 
 - Added `.nvmrc` and `.node-version`, pinning the latest Current security-patched release, Node.js 26.12.1.
+- Added `.npmrc` with `engine-strict=true`, so npm installation rejects Node versions outside the declared safe range.
+- Updated the README prerequisite to state the patched Node.js baseline.
 - Declared the supported runtime range in `package.json`: Node.js >=24.22.1 and <27.
 - Updated GitHub Actions to test both the patched Node.js 24 LTS release (24.22.1) and the patched Node.js 26 Current release (26.12.1).
 - Updated Actions checkout/setup-node from v4 to v5 to remove the previous Node.js 20 action-runtime warning.
