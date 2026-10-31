@@ -1,0 +1,103 @@
+/* HyperAI vNext — responsive shell and accessibility foundation.
+   Loaded after the legacy stylesheet so existing component and JS contracts stay intact. */
+:root {
+  --vnext-content: 880px;
+  --vnext-touch: 44px;
+}
+html { scroll-behavior: smooth; }
+body { overscroll-behavior: none; }
+.app {
+  width: min(1280px, 100%);
+  min-width: 0;
+  border-inline-color: color-mix(in srgb, var(--line) 75%, transparent);
+}
+.topbar, .controls, .composer { min-width: 0; }
+.topbar { min-height: 66px; padding-inline: clamp(12px, 2.4vw, 28px); }
+.controls { padding-inline: clamp(12px, 2.4vw, 28px); }
+.chat { width: 100%; min-width: 0; }
+.chat > * { min-width: 0; }
+.composer { padding-inline: clamp(12px, 2.4vw, 28px); }
+.composer-inner, .composer-tools { width: min(var(--vnext-content), 100%); }
+.icon-btn, .quiet-btn, .control-action, .tool-btn, .quick,
+.picker-trigger, .send, .stop, .modal-btn {
+  min-height: var(--vnext-touch);
+}
+.icon-btn { min-width: var(--vnext-touch); }
+.tool-btn { padding-inline: 11px; }
+.quick { text-align: left; }
+.modal-overlay { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+.modal-box { width: min(680px, 100%); max-height: min(90dvh, 900px); }
+.modal-body { overscroll-behavior: contain; }
+:where(button, textarea, a, [role="option"], [role="listbox"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+:where(button, textarea, a, [role="option"]):focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+:where(button, a) { touch-action: manipulation; }
+#prompt { line-height: 1.55; }
+#chat { overscroll-behavior: contain; scrollbar-gutter: stable; }
+#chat :where(pre, code) { overflow-wrap: anywhere; }
+.status { min-height: 36px; }
+@media (min-width: 801px) {
+  .app { border-radius: 0; }
+  .chat { padding-inline: clamp(24px, 5vw, 64px); }
+  .welcome { width: min(760px, 100%); margin-inline: auto; }
+}
+@media (max-width: 800px) {
+  .app { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .control-action { width: 100%; }
+  .model-info { grid-column: 1 / -1; }
+  .chat { padding-inline: clamp(12px, 3vw, 24px); }
+}
+@media (max-width: 560px) {
+  .app { border-inline: 0; }
+  .topbar { align-items: center; gap: 8px; padding: 9px 12px; }
+  .brand { flex: 1 1 auto; }
+  .brand p { max-width: 35vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .header-actions { flex: 0 1 auto; max-width: none; gap: 6px; }
+  .status { order: initial; min-height: 32px; padding: 6px 8px; }
+  .icon-btn { min-width: 40px; min-height: 40px; }
+  #motionBtn { min-height: 40px; max-width: 112px; white-space: normal; line-height: 1.2; }
+  .controls { gap: 8px; padding: 9px 12px; }
+  .picker-trigger { min-height: 48px; }
+  .control-action { min-height: 44px; }
+  .model-info { gap: 5px 8px; overflow-wrap: anywhere; }
+  .chat { padding: 16px 12px; }
+  .welcome { margin: clamp(20px, 5vh, 48px) auto 24px; }
+  .welcome h2 { font-size: clamp(25px, 7vw, 32px); line-height: 1.12; }
+  .welcome p { max-width: 42ch; line-height: 1.6; }
+  .quick-grid { grid-template-columns: 1fr; }
+  .quick { min-height: 58px; }
+  .composer { padding: 10px 12px max(12px, env(safe-area-inset-bottom)); }
+  .composer-inner { gap: 8px; }
+  #prompt { min-height: 48px; max-height: 34dvh; padding: 12px 48px 12px 12px; }
+  .send, .stop { width: 48px; height: 48px; flex-basis: 48px; }
+  .composer-tools { align-items: flex-start; }
+  .tool-group { gap: 6px; }
+  .tool-btn { min-height: 40px; padding: 7px 9px; }
+  .footer-model { display: none; }
+  .modal-box { max-height: 92dvh; border-radius: 16px; }
+  .modal-body { font-size: 13px; line-height: 1.65; }
+  .modal-header, .modal-body, .modal-footer { padding-inline: 14px; }
+}
+@media (max-width: 360px) {
+  .brand p { display: none; }
+  .header-actions { gap: 4px; }
+  #motionBtn { max-width: 88px; font-size: 8px; }
+  .controls { grid-template-columns: minmax(0, 1fr); }
+  .model-info { grid-column: auto; }
+  .control-label { margin-bottom: 5px; }
+  .model-info { font-size: 9px; }
+  .composer-tools { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
