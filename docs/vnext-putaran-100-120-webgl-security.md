@@ -19,7 +19,7 @@ The previous `public/visuals.js` embedded GLSL shader strings with escaped backs
 - Added a context-loss fallback so the ambient effect can continue on Canvas 2D after a WebGL context loss.
 - Capped device pixel ratio at 1.5 and animation rendering at approximately 30 FPS.
 - Kept animation opt-in through the existing Advanced Motion toggle; animation also pauses when the document is hidden or the OS requests reduced motion.
-- Added cleanup for observers and event listeners on page hide.
+- Added cleanup for observers and event listeners on final page exit, while preserving animation lifecycle when the page is restored from the back-forward cache (bfcache).
 - Added Node tests for GLSL version directives, actual newline characters, and shader input consistency.
 
 ## Security and performance notes
