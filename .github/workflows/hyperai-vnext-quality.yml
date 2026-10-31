@@ -1,0 +1,27 @@
+name: HyperAI vNext quality checks
+
+on:
+  push:
+    branches:
+      - hyperai-vnext/remake-foundation
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run dependency-free tests
+        run: npm test
+      - name: Check JavaScript syntax
+        run: npm run check
