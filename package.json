@@ -6,6 +6,6 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check public/hyperai.js && node --check public/sse.js && node --check public/houdini.js && node --check public/shaders.js && node --check public/visuals.js"
+    "check": "node --check public/hyperai.js && node --check public/sse.js && node --check public/markdown.js && node --check public/houdini.js && node --check public/shaders.js && node --check public/visuals.js"
   }
 }
