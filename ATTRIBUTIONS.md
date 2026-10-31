@@ -1,70 +1,75 @@
 # ATTRIBUTIONS — HyperAI
 
-Dokumen ini mencatat layanan, merek, dan sumber pihak ketiga yang secara eksplisit dirujuk oleh dokumentasi HyperAI. Atribusi ini bukan pernyataan bahwa pihak-pihak tersebut menjadi sponsor, mitra resmi, atau endorser HyperAI.
+**Status:** source-level inventory, last reviewed 31 October 2026.  
+**Project license:** the root `LICENSE` file currently contains MIT License text. See [NOTICE.md](NOTICE.md) for the proposed future license-transition controls.
 
-> **Penting:** daftar ini disusun dari dokumentasi project yang tersedia, bukan audit menyeluruh terhadap semua file repository. Sebelum rilis publik, periksa source code dan folder asset yang benar-benar di-commit, lalu tambahkan setiap library, ikon, font, gambar, video, audio, dan potongan kode eksternal yang digunakan.
+This file records third-party services, model providers, repository badges, and assets identified during a source-level review. It is not a claim of sponsorship, partnership, endorsement, or legal approval.
 
-## 1. Layanan dan platform
+## 1. Third-party services
 
-| Nama | Penggunaan | Referensi resmi | Catatan |
+| Service / owner | Use in HyperAI | Official information | Notes |
 |---|---|---|---|
-| OpenRouter | Gateway/API untuk mengakses model AI | https://openrouter.ai/ · https://openrouter.ai/docs | OpenRouter adalah layanan pihak ketiga. API, pricing, model, dan ketentuannya dikelola oleh OpenRouter serta penyedia model terkait. |
-| Vercel | Hosting dan serverless functions | https://vercel.com/docs | Vercel adalah layanan pihak ketiga. Limit dan fitur deployment mengikuti konfigurasi project serta plan yang berlaku. |
-| GitHub | Hosting repository dan issue/kontribusi | https://docs.github.com/ | Nama dan merek GitHub tetap milik GitHub. Penyebutan ini tidak berarti endorsement. |
-| Shields.io | Membuat badge status yang digunakan pada README | https://shields.io/ | Badge menghasilkan gambar status; logo dan merek di dalamnya tetap milik masing-masing pemilik. |
+| OpenRouter, Inc. | API gateway for model inference and optional web-search routing | https://openrouter.ai/ · https://openrouter.ai/terms · https://openrouter.ai/privacy/ | Provider terms and model-specific terms apply. OpenRouter states users must be at least 18. |
+| Vercel, Inc. | Intended hosting/serverless platform and function configuration | https://vercel.com/docs · https://vercel.com/legal | Platform data processing, logs, cookies, and retention depend on the actual deployment/account configuration. |
+| GitHub, Inc. | Source repository, issue tracking, and GitHub Actions CI | https://docs.github.com/ | GitHub marks and services remain owned by GitHub. |
+| Shields.io | README badges | https://shields.io/ | Badge endpoint is used in README; badge logos may be trademarks of their respective owners. |
 
-## 2. Model AI dan penyedia inference
+## 2. Model providers
 
-HyperAI dapat mengirim request ke model yang tersedia melalui OpenRouter. Nama model, ID model, bobot, output, dan merek yang terkait tetap mengikuti ketentuan masing-masing penerbit dan provider. Daftar model yang tersedia dapat berubah sewaktu-waktu.
+HyperAI's backend contains an explicit model allowlist and routes requests through OpenRouter. The model provider may vary by selected model and may change over time. The provider's terms, privacy practices, retention, training settings, output rights, and restrictions must be checked for each enabled model.
 
-Sebelum mendistribusikan bobot model, dataset, output yang dibatasi, atau materi yang disediakan provider, periksa lisensi dan terms dari penerbit model serta provider yang digunakan. Penggunaan OpenRouter sebagai gateway tidak otomatis memberikan hak untuk mendistribusikan ulang seluruh materi model.
+Do not infer that all model providers have identical data handling. See:
+- https://openrouter.ai/models
+- https://openrouter.ai/privacy/
+- https://openrouter.ai/terms
 
-Referensi:
+## 3. Runtime dependencies and platform APIs
 
-- OpenRouter Models: https://openrouter.ai/models
-- OpenRouter Free Models: https://openrouter.ai/collections/free-models
-- OpenRouter Pricing: https://openrouter.ai/pricing/
+The inspected `package.json` declares no third-party npm runtime dependencies. Backend code uses Node.js built-in modules and platform-provided `fetch`, streams, and standard web APIs. Frontend code uses browser-provided APIs such as DOM, Canvas, WebGL2, Web Storage, and CSS Houdini where supported.
 
-## 3. Kode project dan lisensi
+This is a source-level finding; re-check package manifests and lockfiles whenever dependencies are added.
 
-Kode HyperAI di repository ini dinyatakan menggunakan **MIT License**, sebagaimana dijelaskan di file [`LICENSE`](LICENSE). Pastikan file `LICENSE` benar-benar tersedia dan nama pemegang hak cipta serta tahunnya sesuai sebelum rilis.
+## 4. Project-authored assets
 
-Lisensi MIT untuk kode project tidak memberikan lisensi atas merek dagang, layanan eksternal, model AI, atau asset yang dimiliki pihak lain.
+| File | Description | Provenance |
+|---|---|---|
+| `public/assets/hyperai-mark.svg` | Simple HyperAI mark SVG | Present in project source; confirm authorship/ownership with the contributor before release. |
+| `public/shaders.js` | WebGL shader source | Project source; confirm contributor rights. |
+| `public/worklets/hyperai-grid.js` | CSS Paint Worklet | Project source; confirm contributor rights. |
 
-## 4. Asset visual, audio, video, font, dan ikon
+## 5. Assets requiring provenance verification
 
-README yang tersedia menyebut kemungkinan penggunaan background video, audio trigger, ikon, dan media eksternal. Namun, nama file, kreator, URL asal, dan lisensi setiap asset tidak dapat dipastikan hanya dari README. Karena itu, asset yang belum diverifikasi **tidak dicantumkan sebagai sudah mendapat izin**.
+| File | Required action |
+|---|---|
+| `public/favicon.png` | **Unverified.** Identify creator/source and license, or replace with a verified project-authored asset before release. |
 
-Untuk setiap asset pihak ketiga yang benar-benar digunakan, tambahkan satu entri dengan format berikut:
+No third-party font import, analytics SDK, or advertising SDK was identified in the reviewed CSS/JavaScript files. This does not rule out platform-level technologies or assets added later.
 
+For every future third-party asset, record:
 ```text
-Asset/file:
-Jenis: (gambar / video / audio / font / ikon / kode / lainnya)
-Kreator atau pemilik hak:
-Sumber asli URL:
-Lisensi atau izin penggunaan:
-Perubahan yang dilakukan:
-Tanggal diperiksa:
+File:
+Asset type:
+Creator / rights holder:
+Original source URL:
+License / permission:
+Modifications:
+Date verified:
 ```
 
-Panduan:
+## 6. Trademarks and no affiliation
 
-- Gunakan asset buatan sendiri, berlisensi kompatibel, atau asset yang izin penggunaannya jelas.
-- Simpan salinan teks lisensi atau catatan izin bila diperlukan.
-- Jangan menganggap asset yang dapat diakses publik otomatis bebas digunakan ulang.
-- Untuk media embed, catat sumber media dan ketentuan platformnya.
-- Jika asset diganti atau dihapus, perbarui dokumen ini.
+OpenRouter, Vercel, GitHub, Shields.io, and model/provider names are used only to identify services or compatibility. Their respective owners retain all trademark rights. No official affiliation, endorsement, sponsorship, or partnership is implied unless separately documented in writing.
 
-## 5. Kontribusi dari pihak lain
+## 7. License boundary
 
-Jika menerima pull request yang menambahkan dependency, source code, desain, atau asset eksternal, periksa lisensi dan kebutuhan atribusinya sebelum menggabungkan perubahan. Cantumkan copyright notice dan teks lisensi yang diwajibkan oleh pemilik aslinya.
+The root `LICENSE` currently says MIT. The proposed AGPL-3.0-or-later transition is not applied by this attribution update. Before changing the root license, audit contributor ownership, preserve the MIT grant for already distributed versions, define the exact future-version boundary, and update `LICENSE`, `NOTICE.md`, README badges, and release notes together.
 
-## 6. Tidak ada afiliasi resmi
+## 8. Related legal documents
 
-HyperAI adalah project independen. Kecuali dinyatakan secara tertulis dan dapat diverifikasi, penggunaan nama atau tautan OpenRouter, Vercel, GitHub, Shields.io, penerbit model, dan provider lainnya **bukan** klaim kemitraan, sponsor, atau endorsement.
-
----
-
-**Maintainer:** HyperGaruda (`Hanzet22`)  
-**Project:** HyperAI  
-**Last reviewed:** 2026-10-19
+- [Privacy Notice](PRIVACY.md)
+- [Terms of Use](TERMS.md)
+- [Cookie and Browser Storage Notice](COOKIE-NOTICE.md)
+- [Security Policy](SECURITY.md)
+- [Project Notices](NOTICE.md)
+- [Internal Data Inventory](docs/legal-data-inventory.md)
+- [Legal Readiness Checklist](docs/legal-readiness-checklist.md)
