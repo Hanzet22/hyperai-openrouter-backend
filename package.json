@@ -1,4 +1,8 @@
 {
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check public/hyperai.js && node --check public/sse.js && node --check public/houdini.js && node --check public/visuals.js"
+  }
 }
