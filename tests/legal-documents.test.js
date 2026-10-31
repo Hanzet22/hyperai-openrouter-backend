@@ -43,7 +43,7 @@ test("attributions and notices preserve the current MIT license status and avoid
 test("privacy inventory records provider data flow and deployment verification boundary", () => {
   assert.ok(privacy.includes("OpenRouter"));
   assert.ok(privacy.includes("model provider"));
-  assert.ok(inventory.includes("POST `/api/chat`"));
+  assert.ok(inventory.includes("POST /api/chat"));
   assert.ok(inventory.includes("deployment verification outstanding"));
   assert.ok(security.includes("private vulnerability reporting"));
 });
