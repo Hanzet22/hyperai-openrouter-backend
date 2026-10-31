@@ -49,7 +49,7 @@ test("decodes frames split across arbitrary network chunks", () => {
   const stream = new SSEStreamDecoder(value => chunks.push(value));
   stream.push('data: {"choices":[{"delta":{"content":"split');
   stream.push(' "}}]}\n\n');
-  stream.push("data: [DONE]\\n\\n");
+  stream.push("data: [DONE]\n\n");
   assert.equal(stream.done, true);
   assert.deepEqual(chunks, ["split "]);
 });
