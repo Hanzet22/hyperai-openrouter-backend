@@ -277,3 +277,5 @@
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
       html[data-motion="advanced"] .backdrop::before, html[data-motion="advanced"] .orb { animation: none !important; }
     }
+
+.brand-mark img { display: block; width: 24px; height: 24px; }
