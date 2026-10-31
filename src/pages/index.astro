@@ -1,0 +1,21 @@
+---
+/* Astro migration entrypoint. The current static HTML remains the compatibility entry
+   until Astro build output and Vercel Function routing are verified together. */
+import "../styles/tailwind.css";
+---
+<!doctype html>
+<html lang="id" data-theme="dark" data-motion="basic">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#080b13" />
+    <meta name="description" content="HyperAI — a lightweight OpenRouter chat client by HyperGaruda." />
+    <title>HyperAI · Astro migration shell</title>
+  </head>
+  <body>
+    <main>
+      <h1>HyperAI Astro migration shell</h1>
+      <p>This route is an integration checkpoint, not the production chat entry. The live compatibility entry remains <a href="/index.html">the current HyperAI client</a> until Astro, Tailwind and Vercel Functions pass build and route regression tests.</p>
+    </main>
+  </body>
+</html>
