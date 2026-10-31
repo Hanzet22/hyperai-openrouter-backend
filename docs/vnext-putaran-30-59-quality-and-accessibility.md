@@ -26,8 +26,9 @@
 ## Verification status
 
 - Source-level integration was reviewed after the edits.
+- The workflow run validates the branch snapshot at commit `7752ba1d52f4d5e1437af8cfe11a8332c9c01781`; the follow-up documentation-only update does not change executable source.
 - GitHub Actions was configured to run the Node test suite and JavaScript syntax checks.
-- The test suite has **not** been claimed as passing until a completed workflow run is inspected.
+- GitHub Actions run [#7](https://github.com/Hanzet22/hyperai-openrouter-backend/actions/runs/41203074067) completed successfully: **10/10 tests passed**, 0 failed; all JavaScript syntax checks passed under Node.js 22.23.4.
 - No browser/device visual regression, Android testing, screen-reader testing, real OpenRouter stream test, performance profiling, or full WCAG 2.2 AA audit was performed in this phase.
 - The current Astro page remains a migration checkpoint, not the active chat renderer. Tailwind remains a source entry, not a verified production build pipeline.
 
