@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Tailwind v4 source layer. Keep the established HyperAI visual tokens in public/hyperai.css. */
+@theme {
+  --color-hyper-bg: #080b13;
+  --color-hyper-panel: #111725;
+  --color-hyper-text: #edf3ff;
+  --color-hyper-accent: #75adff;
+  --color-hyper-violet: #a08aff;
+  --color-hyper-cyan: #50dffc;
+}
