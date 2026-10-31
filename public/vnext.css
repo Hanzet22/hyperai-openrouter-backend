@@ -101,3 +101,19 @@ body { overscroll-behavior: none; }
     transition-duration: .01ms !important;
   }
 }
+
+/* Keyboard skip navigation: visible only when reached by keyboard. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 2000;
+  transform: translateY(calc(-100% - 12px));
+  padding: 10px 14px;
+  border: 2px solid var(--cyan);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  color: var(--text);
+  font-weight: 800;
+}
+.skip-link:focus { transform: translateY(0); }
