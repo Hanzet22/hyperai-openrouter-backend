@@ -171,7 +171,7 @@ Sesuaikan dengan kebutuhan repository. Jika secret pernah masuk ke riwayat Git, 
 ### Prasyarat
 
 - Git
-- Node.js versi yang kompatibel dengan project
+- Node.js 26.12.1 (pinned default) atau Node.js 24.22.1 LTS (minimum supported patch)
 - Akun OpenRouter dan API key
 - Vercel CLI untuk menjalankan Vercel Functions secara lokal
 
