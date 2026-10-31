@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { escapeHTML, renderMarkdown } from "../public/markdown.js";
 
 test("escapes HTML metacharacters and quotes", () => {
-  assert.equal(escapeHTML(`<&>"'`), "&lt;&amp;&gt;&quot;&#039;");
+  assert.equal(escapeHTML("<&>\"\'"), "&lt;&amp;&gt;&quot;&#039;");
 });
 
 test("renders untrusted HTML as text rather than executable markup", () => {
@@ -23,8 +23,9 @@ test("creates only HTTP and HTTPS links with safe new-window attributes", () => 
 });
 
 test("keeps HTML escaped inside fenced code blocks and language metadata", () => {
-  const output = renderMarkdown("```html\n<img src=x onerror=\\"alert(1)\\">\n```");
-  assert.ok(output.includes('<pre data-language="html"><code>&lt;img src=x onerror=&quot;alert(1)&quot;&gt;'));
+  const fence = String.fromCharCode(96).repeat(3);
+  const output = renderMarkdown(fence + "html\n<img src=x onerror=alert(1)>\n" + fence);
+  assert.ok(output.includes('<pre data-language="html"><code>&lt;img src=x onerror=alert(1)&gt;'));
   assert.ok(!output.includes("<img"));
 });
 
