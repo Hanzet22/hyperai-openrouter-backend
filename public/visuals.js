@@ -1,91 +1,237 @@
-const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+import { VERTEX_SHADER, FRAGMENT_SHADER } from "./shaders.js";
+
+const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+const MAX_DPR = 1.5;
+const FRAME_INTERVAL = 1000 / 30;
 
 function makeCanvas(backdrop) {
   const canvas = document.createElement("canvas");
   canvas.className = "ambient-canvas";
   canvas.setAttribute("aria-hidden", "true");
-  Object.assign(canvas.style, { position: "absolute", inset: "0", width: "100%", height: "100%", pointerEvents: "none", opacity: ".18" });
+  Object.assign(canvas.style, {
+    position: "absolute",
+    inset: "0",
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    opacity: ".18"
+  });
   backdrop.prepend(canvas);
   return canvas;
 }
 
-function resize(canvas) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-  canvas.width = Math.max(1, Math.floor(innerWidth * dpr));
-  canvas.height = Math.max(1, Math.floor(innerHeight * dpr));
+function resize(canvas, gl = null) {
+  const bounds = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  const width = Math.max(1, Math.floor((bounds.width || window.innerWidth) * dpr));
+  const height = Math.max(1, Math.floor((bounds.height || window.innerHeight) * dpr));
+  if (canvas.width === width && canvas.height === height) return;
+  canvas.width = width;
+  canvas.height = height;
+  if (gl) gl.viewport(0, 0, width, height);
+}
+
+function compileShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  if (!shader) throw new Error("Unable to allocate WebGL shader.");
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const message = gl.getShaderInfoLog(shader) || "WebGL shader compilation failed.";
+    gl.deleteShader(shader);
+    throw new Error(message);
+  }
+  return shader;
+}
+
+function createWebGLRenderer(canvas) {
+  const gl = canvas.getContext("webgl2", {
+    alpha: true,
+    antialias: false,
+    depth: false,
+    stencil: false,
+    powerPreference: "low-power"
+  });
+  if (!gl) return null;
+
+  let vertexShader;
+  let fragmentShader;
+  let program;
+  let buffer;
+  try {
+    vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    program = gl.createProgram();
+    if (!program) throw new Error("Unable to allocate WebGL program.");
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program) || "WebGL program linking failed.");
+    }
+
+    buffer = gl.createBuffer();
+    if (!buffer) throw new Error("Unable to allocate WebGL buffer.");
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+      gl.STATIC_DRAW
+    );
+
+    const position = gl.getAttribLocation(program, "position");
+    const time = gl.getUniformLocation(program, "time");
+    const resolution = gl.getUniformLocation(program, "resolution");
+    if (position < 0 || !time || !resolution) {
+      throw new Error("Required WebGL shader inputs were not found.");
+    }
+
+    gl.useProgram(program);
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND);
+
+    return {
+      kind: "webgl2",
+      render(now) {
+        if (gl.isContextLost()) return;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.uniform1f(time, now / 1000);
+        gl.uniform2f(resolution, canvas.width, canvas.height);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
+    };
+  } catch (error) {
+    if (buffer) gl.deleteBuffer(buffer);
+    if (program) gl.deleteProgram(program);
+    throw error;
+  } finally {
+    if (vertexShader) gl.deleteShader(vertexShader);
+    if (fragmentShader) gl.deleteShader(fragmentShader);
+  }
+}
+
+function createCanvas2DRenderer(canvas) {
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) return null;
+  return {
+    kind: "canvas2d",
+    render(now) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "rgba(80, 223, 252, 0.07)";
+      for (let index = 0; index < 12; index += 1) {
+        const x = (index * 173 + now * 0.012) % canvas.width;
+        const y = (index * 97) % canvas.height;
+        context.beginPath();
+        context.arc(x, y, 2, 0, Math.PI * 2);
+        context.fill();
+      }
+    }
+  };
 }
 
 export function initAmbientVisuals() {
   const backdrop = document.querySelector(".backdrop");
-  if (!backdrop || reducedMotion || !("requestAnimationFrame" in window)) return;
-  let canvas = makeCanvas(backdrop);
-  resize(canvas);
-  let renderer = null;
+  if (!backdrop || !("requestAnimationFrame" in window)) return;
 
-  const gl = canvas.getContext("webgl2", { alpha: true, antialias: false, powerPreference: "low-power" });
-  if (gl) {
-    try {
-      const vertexSource = "#version 300 es\\nin vec2 position; void main(){ gl_Position=vec4(position,0.0,1.0); }";
-      const fragmentSource = "#version 300 es\\nprecision mediump float; uniform float time; uniform vec2 resolution; out vec4 color; void main(){ vec2 uv=gl_FragCoord.xy/max(resolution,vec2(1.0)); float wave=0.5+0.5*sin(time*0.16+uv.x*5.0+uv.y*3.0); color=vec4(0.12,0.34,0.72,wave*0.10); }";
-      const compile = (type, source) => {
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) || "Shader compilation failed");
-        return shader;
-      };
-      const program = gl.createProgram();
-      gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-      gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || "Shader link failed");
-      gl.useProgram(program);
-      const buffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-      const position = gl.getAttribLocation(program, "position");
-      gl.enableVertexAttribArray(position);
-      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-      renderer = (now) => {
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.uniform1f(gl.getUniformLocation(program, "time"), now / 1000);
-        gl.uniform2f(gl.getUniformLocation(program, "resolution"), canvas.width, canvas.height);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      };
-    } catch {
-      // A canvas cannot switch context types; replace it before using the 2D fallback.
-      canvas.remove();
-      canvas = makeCanvas(backdrop);
-      resize(canvas);
-    }
+  let canvas = makeCanvas(backdrop);
+  let renderer = null;
+  let frame = 0;
+  let lastFrameAt = 0;
+  let disposed = false;
+
+  const useCanvasFallback = () => {
+    canvas.remove();
+    canvas = makeCanvas(backdrop);
+    resize(canvas);
+    renderer = createCanvas2DRenderer(canvas);
+    bindContextLoss();
+  };
+
+  const bindContextLoss = () => {
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      stop();
+      if (!disposed) useCanvasFallback();
+      start();
+    }, { once: true });
+  };
+
+  try {
+    renderer = createWebGLRenderer(canvas);
+  } catch {
+    renderer = null;
   }
+  if (!renderer) useCanvasFallback();
+  else bindContextLoss();
 
   if (!renderer) {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) { canvas.remove(); return; }
-    renderer = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgba(80,223,252,.07)";
-      for (let i = 0; i < 12; i++) {
-        const x = (i * 173 + performance.now() * .012) % canvas.width;
-        const y = (i * 97) % canvas.height;
-        ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
-      }
-    };
+    canvas.remove();
+    return;
   }
 
-  let frame = 0;
-  const stop = () => { if (frame) cancelAnimationFrame(frame); frame = 0; };
-  const tick = (now) => {
+  resize(canvas, renderer.kind === "webgl2" ? canvas.getContext("webgl2") : null);
+
+  function stop() {
+    if (frame) window.cancelAnimationFrame(frame);
     frame = 0;
-    if (document.hidden || document.documentElement.dataset.motion !== "advanced") return;
-    renderer(now);
-    frame = requestAnimationFrame(tick);
+  }
+
+  function shouldAnimate() {
+    return !disposed &&
+      !document.hidden &&
+      !motionPreference?.matches &&
+      document.documentElement.dataset.motion === "advanced";
+  }
+
+  function tick(now) {
+    frame = 0;
+    if (!shouldAnimate()) return;
+    if (now - lastFrameAt >= FRAME_INTERVAL) {
+      renderer.render(now);
+      lastFrameAt = now;
+    }
+    frame = window.requestAnimationFrame(tick);
+  }
+
+  function start() {
+    if (!frame && shouldAnimate()) frame = window.requestAnimationFrame(tick);
+  }
+
+  const motionObserver = new MutationObserver(() => {
+    if (shouldAnimate()) start();
+    else stop();
+  });
+  motionObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-motion"]
+  });
+
+  const handleVisibility = () => {
+    if (document.hidden) stop();
+    else start();
   };
-  const start = () => { if (!frame && !document.hidden && document.documentElement.dataset.motion === "advanced") frame = requestAnimationFrame(tick); };
-  const observer = new MutationObserver(() => document.documentElement.dataset.motion === "advanced" ? start() : stop());
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
-  document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
-  window.addEventListener("resize", () => { resize(canvas); if (renderer && canvas.getContext("webgl2")) { const context=canvas.getContext("webgl2"); context.viewport(0,0,canvas.width,canvas.height); } }, { passive: true });
+  const handlePreference = () => {
+    if (motionPreference?.matches) stop();
+    else start();
+  };
+  const handleResize = () => {
+    const gl = renderer?.kind === "webgl2" ? canvas.getContext("webgl2") : null;
+    resize(canvas, gl);
+  };
+  const cleanup = () => {
+    disposed = true;
+    stop();
+    motionObserver.disconnect();
+    document.removeEventListener("visibilitychange", handleVisibility);
+    window.removeEventListener("resize", handleResize);
+    motionPreference?.removeEventListener?.("change", handlePreference);
+  };
+
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("resize", handleResize, { passive: true });
+  motionPreference?.addEventListener?.("change", handlePreference);
+  window.addEventListener("pagehide", cleanup, { once: true });
   start();
 }
