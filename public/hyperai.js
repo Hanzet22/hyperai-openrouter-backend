@@ -1,6 +1,7 @@
 import { initHoudini } from "./houdini.js";
 import { initAmbientVisuals } from "./visuals.js";
 import { SSEStreamDecoder } from "./sse.js";
+import { escapeHTML, renderMarkdown } from "./markdown.js";
 
     "use strict";
 
@@ -232,29 +233,7 @@ import { SSEStreamDecoder } from "./sse.js";
         event.preventDefault(); sendMessage();
       }
     });
-    function escapeHTML(value) {
-      return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-    }
-    function renderMarkdown(text) {
-      let safe = escapeHTML(text);
-      const blocks = [];
-      safe = safe.replace(/```([^\n]*)\n?([\s\S]*?)```/g, (_, language, body) => `@@CODE_${blocks.push({ language: language.trim(), body }) - 1}@@`);
-      safe = safe.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-      safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-      safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-      safe = safe.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
-        const cleaned = url.replace(/[),.!?]+$/, "");
-        return `<a href="${cleaned}" target="_blank" rel="noopener noreferrer">${cleaned}</a>${url.slice(cleaned.length)}`;
-      });
-      safe = safe.replace(/(^|\n)[ \t]*[-*] (.+)/g, "$1• $2");
-      safe = `<p>${safe.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
-      blocks.forEach((block, index) => {
-        const lang = block.language ? ` data-language="${escapeHTML(block.language)}"` : "";
-        safe = safe.replace(`@@CODE_${index}@@`, `<pre${lang}><code>${block.body}</code></pre>`);
-      });
-      return safe;
-    }
-    function createMessage(role, content = "") {
+        function createMessage(role, content = "") {
       if (welcome && welcome.isConnected) welcome.style.display = "none";
       const article = document.createElement("article");
       article.className = `message ${role}`;
