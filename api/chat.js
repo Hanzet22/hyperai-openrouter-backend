@@ -226,6 +226,15 @@ export default async function handler(req, res) {
   const body = preparePost(req, res);
   if (!body) return;
 
+  if (process.env.HYPERAI_PROVIDER_ACCESS_APPROVED !== "true") {
+    return fail(
+      res,
+      503,
+      "Provider-backed chat is disabled until an authorized adult operator confirms provider eligibility and the intended access model.",
+      "PROVIDER_ACCESS_NOT_APPROVED"
+    );
+  }
+
   const model = typeof body.model === "string" ? body.model.trim() : "";
   if (!model) return fail(res, 400, "Model is required.", "MODEL_REQUIRED");
   const modelConfig = CHAT_MODELS.get(model);
