@@ -390,8 +390,9 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
           streamDecoder.push(decoder.decode(result.value, { stream: true }));
         }
         streamDecoder.push(decoder.decode());
-        streamDecoder.finish();
+        const streamCompleted = streamDecoder.finish();
         try { await reader.cancel(); } catch { /* stream may already be closed */ }
+        if (!streamCompleted) throw new Error("Stream terputus sebelum penanda selesai diterima. Coba ulangi respons.");
         if (!fullText.trim()) throw new Error("Respons kosong. Model mungkin tidak kompatibel atau sedang tidak tersedia.");
         messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText;
         if (copyMessageBtn) copyMessageBtn.disabled = false;
