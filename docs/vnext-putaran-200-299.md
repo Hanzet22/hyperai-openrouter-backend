@@ -37,3 +37,13 @@
 ## Validation approach
 
 Keep validation focused: syntax/CI checks and targeted review of changed UI behavior. This document does not claim a complete WCAG audit, legal approval, or security certification.
+
+
+## Putaran 300–371 — first implementation slice
+
+- Added per-assistant-message copy controls with a clipboard fallback and accessible labels.
+- Added contextual retry controls after interrupted or failed responses; retry reuses the last submitted prompt without duplicating the user message.
+- Reused the same retry action for the existing global regenerate control.
+- Added compact mobile-friendly message action styling.
+- Exported the chat message validator for direct unit testing and added focused validation and provider default-deny regression tests.
+- The test suite verifies accepted message shapes, role/content rejection, per-message and aggregate size limits, message count limits, and the provider approval gate.
