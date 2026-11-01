@@ -40,6 +40,33 @@
     </section>
   </div>
 
+  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+    <div class="settings-panel">
+      <header class="settings-header">
+        <div><p class="settings-eyebrow">HYPERAI CONSOLE</p><h2 id="settingsTitle">Pengaturan</h2></div>
+        <button id="closeSettingsBtn" class="icon-btn" type="button" aria-label="Tutup pengaturan">✕</button>
+      </header>
+      <section class="settings-section" aria-labelledby="appearanceTitle">
+        <h3 id="appearanceTitle">Tampilan & aksesibilitas</h3>
+        <div class="settings-row">
+          <div><strong>Tema</strong><p>Pilih tampilan gelap atau terang.</p></div>
+          <button id="settingsThemeBtn" class="settings-action" type="button">☀️ Ganti tema</button>
+        </div>
+        <div class="settings-row">
+          <div><strong>Advanced Motion</strong><p>Animasi tambahan; dapat dimatikan kapan saja.</p></div>
+          <button id="settingsMotionBtn" class="settings-action" type="button" aria-pressed="false">Motion: OFF</button>
+        </div>
+      </section>
+      <section class="settings-section" aria-labelledby="privacyTitle">
+        <h3 id="privacyTitle">Privasi & penyimpanan</h3>
+        <p class="settings-copy">HyperAI menyimpan preferensi tema, motion, model, dan mode berpikir di penyimpanan lokal browser. Isi percakapan hanya berada di memori halaman saat ini dan tidak dibuat menjadi riwayat persisten oleh antarmuka ini. Request yang dikirim ke provider tetap tunduk pada kebijakan provider masing-masing.</p>
+        <p class="settings-copy"><strong>Jangan kirim</strong> API key, kata sandi, token, dokumen identitas, atau data rahasia.</p>
+        <button id="resetPreferencesBtn" class="settings-danger" type="button">Reset preferensi lokal</button>
+      </section>
+      <footer class="settings-footer"><button id="doneSettingsBtn" class="modal-btn" type="button">Selesai</button></footer>
+    </div>
+  </dialog>
+
   <div class="app">
     <header class="topbar">
       <div class="brand">
@@ -50,6 +77,7 @@
         <div class="status"><span id="statusDot" class="status-dot"></span><span id="statusText" role="status" aria-live="polite">Siap</span></div>
         <button id="themeBtn" class="icon-btn" type="button" aria-label="Ganti tema" title="Ganti Night/Day Mode">☀️</button>
         <button id="motionBtn" class="quiet-btn" type="button" aria-pressed="false" title="Aktifkan animasi lanjutan">✦ Advanced Motion: OFF</button>
+        <button id="settingsBtn" class="quiet-btn settings-trigger" type="button" aria-haspopup="dialog" aria-controls="settingsDialog">⚙️ Pengaturan</button>
       </div>
     </header>
 
