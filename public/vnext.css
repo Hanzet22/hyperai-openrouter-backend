@@ -117,3 +117,49 @@ body { overscroll-behavior: none; }
   font-weight: 800;
 }
 .skip-link:focus { transform: translateY(0); }
+
+
+/* Aurora Console — responsive and readable controls. */
+html[data-theme="light"] { --faint: #59677d; }
+.picker-sub, .option-desc { font-size: 12px; line-height: 1.45; }
+.control-label { font-size: 12px; }
+.char-count { font-size: 11px; }
+.meta { font-size: 10px; }
+.tool-btn {
+  min-height: 44px;
+  padding: 8px 11px;
+  font-size: 11px;
+}
+.icon-btn, .quiet-btn { min-height: 44px; }
+.icon-btn { min-width: 44px; }
+.control-action { min-height: 44px; }
+.picker-trigger { min-height: 48px; }
+.modal-body { font-size: 14px; line-height: 1.65; }
+.modal-body h3 { font-size: 14px; }
+.modal-btn { min-height: 48px; font-size: 12px; }
+.webgpu-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--panel);
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.webgpu-status[data-state="available"] {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 35%, var(--line));
+}
+.webgpu-status[data-state="unavailable"] { color: var(--muted); }
+@media (max-width: 560px) {
+  .icon-btn, .quiet-btn, .control-action, .tool-btn { min-height: 44px; }
+  .icon-btn { min-width: 44px; }
+  .picker-trigger { min-height: 48px; }
+  .picker-sub, .control-label { font-size: 12px; }
+  .tool-btn { font-size: 11px; padding: 8px 9px; }
+  #motionBtn { min-height: 44px; }
+}
