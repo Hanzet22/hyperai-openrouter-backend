@@ -98,7 +98,7 @@ const SYSTEM_INSTRUCTION =
   "Gunakan bahasa Indonesia kasual mengikuti gaya user. Jawab jelas, relevan, dan langsung ke inti. " +
   "Kalau ada ketidakpastian, jelaskan; jangan mengarang sumber, pengalaman, atau hasil tindakan.";
 
-function validateMessages(messages) {
+export function validateMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
     return { ok: false, status: 400, message: "Messages are required." };
   }
