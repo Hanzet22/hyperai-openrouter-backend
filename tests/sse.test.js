@@ -71,3 +71,18 @@ test("flushes a final frame when the stream ends without a blank separator", () 
   assert.equal(stream.finish(), false);
   assert.deepEqual(chunks, ["final"]);
 });
+
+
+test("reports an incomplete stream when the done sentinel is missing", () => {
+  const received = [];
+  const decoder = new SSEStreamDecoder((delta) => received.push(delta));
+  decoder.push('data: {"choices":[{"delta":{"content":"partial"}}]}\\n\\n');
+  assert.equal(decoder.finish(), false);
+  assert.deepEqual(received, ["partial"]);
+});
+
+test("reports a complete stream after the done sentinel", () => {
+  const decoder = new SSEStreamDecoder(() => {});
+  decoder.push("data: [DONE]\\n\\n");
+  assert.equal(decoder.finish(), true);
+});
