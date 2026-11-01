@@ -14,6 +14,7 @@
 ### Public documentation privacy
 - Replaced personal social/contact handles and personal collaboration email in the README with the project GitHub Issues channel.
 - Added a reminder to redact personal data and credentials in public reports.
+- Added baseline Vercel response headers: content-type sniffing protection, frame denial, strict referrer policy, restrictive camera/microphone/geolocation permissions, same-origin opener/resource policies, and HSTS.
 
 ## Existing product boundaries retained
 
@@ -30,7 +31,7 @@
 - Improve message action affordances and streaming/error states.
 - Consolidate status presentation and empty states.
 - Review keyboard navigation and reduced-motion behavior.
-- Review server-side rate limiting and request-abuse controls before any public provider access.
+- Review server-side rate limiting and request-abuse controls before any public provider access. Do not rely on per-instance in-memory counters for serverless rate limiting; a shared, authorized service would be required.
 - Update release checklist only after implementation and operator review.
 
 ## Validation approach
