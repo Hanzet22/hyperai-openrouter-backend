@@ -27,6 +27,10 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
     const searchToggleBtn = $("#searchToggleBtn"), charCount = $("#charCount"), toast = $("#toast");
     const statusDot = $("#statusDot"), statusText = $("#statusText"), streamStatus = $("#streamStatus");
     const welcomeModal = $("#welcomeModal"), closeModalBtn = $("#closeModalBtn");
+    const settingsDialog = $("#settingsDialog"), settingsBtn = $("#settingsBtn");
+    const closeSettingsBtn = $("#closeSettingsBtn"), doneSettingsBtn = $("#doneSettingsBtn");
+    const settingsThemeBtn = $("#settingsThemeBtn"), settingsMotionBtn = $("#settingsMotionBtn");
+    const resetPreferencesBtn = $("#resetPreferencesBtn");
     const modelPicker = $("#modelPicker"), modelTrigger = $("#modelTrigger"), modelMenu = $("#modelMenu");
     const thinkingPicker = $("#thinkingPicker"), thinkingTrigger = $("#thinkingTrigger"), thinkingMenu = $("#thinkingMenu");
     const modelName = $("#modelName"), modelSub = $("#modelSub"), modelChip = $("#modelChip"), modelIdLabel = $("#modelIdLabel");
@@ -57,6 +61,7 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       const themeColor = nextTheme === "dark" ? "#080b13" : "#eef3fb";
       document.querySelector('meta[name="theme-color"]').setAttribute("content", themeColor);
       safeSet("hyperai.theme", nextTheme);
+      if (settingsThemeBtn) settingsThemeBtn.textContent = nextTheme === "dark" ? "☀️ Beralih ke terang" : "🌙 Beralih ke gelap";
     }
     function applyMotion(enabled) {
       const active = Boolean(enabled);
@@ -66,11 +71,42 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       motionBtn.title = active ? "Matikan animasi lanjutan" : "Aktifkan animasi dan motion lanjutan";
       if (!active) cursorGlow.style.opacity = "0";
       safeSet("hyperai.advancedMotion", active ? "on" : "off");
+      if (settingsMotionBtn) { settingsMotionBtn.textContent = active ? "Motion: ON" : "Motion: OFF"; settingsMotionBtn.setAttribute("aria-pressed", String(active)); }
     }
     applyTheme(safeGet("hyperai.theme") || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
     applyMotion(safeGet("hyperai.advancedMotion") === "on");
     themeBtn.addEventListener("click", () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
     motionBtn.addEventListener("click", () => applyMotion(document.documentElement.dataset.motion !== "advanced"));
+    function closeSettings() {
+      if (settingsDialog.open) settingsDialog.close();
+      settingsBtn.focus({ preventScroll: true });
+    }
+    settingsBtn.addEventListener("click", () => settingsDialog.showModal());
+    closeSettingsBtn.addEventListener("click", closeSettings);
+    doneSettingsBtn.addEventListener("click", closeSettings);
+    settingsDialog.addEventListener("click", (event) => {
+      if (event.target === settingsDialog) closeSettings();
+    });
+    settingsThemeBtn.addEventListener("click", () => {
+      applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+    });
+    settingsMotionBtn.addEventListener("click", () => {
+      applyMotion(document.documentElement.dataset.motion !== "advanced");
+    });
+    resetPreferencesBtn.addEventListener("click", () => {
+      try {
+        ["hyperai.theme", "hyperai.advancedMotion", "hyperai.model", "hyperai.thinking"].forEach(key => localStorage.removeItem(key));
+      } catch { /* storage may be unavailable */ }
+      applyTheme("dark");
+      applyMotion(false);
+      chooseModel(MODELS[0].id);
+      chooseThinking("medium");
+      showToast("Preferensi lokal direset.");
+    });
+    settingsDialog.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") settingsBtn.focus({ preventScroll: true });
+    });
+
     window.addEventListener("pointermove", (event) => {
       if (document.documentElement.dataset.motion !== "advanced" || event.pointerType === "touch") return;
       cursorGlow.style.left = event.clientX + "px";
