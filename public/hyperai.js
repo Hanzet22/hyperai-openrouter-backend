@@ -269,6 +269,36 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
         event.preventDefault(); sendMessage();
       }
     });
+    async function copyText(text) {
+      if (!text) return false;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Pesan disalin.");
+        return true;
+      } catch {
+        const temporary = document.createElement("textarea");
+        temporary.value = text;
+        temporary.setAttribute("readonly", "");
+        temporary.style.position = "fixed";
+        temporary.style.opacity = "0";
+        document.body.appendChild(temporary);
+        temporary.select();
+        let copied = false;
+        try { copied = document.execCommand("copy"); } catch { copied = false; }
+        temporary.remove();
+        showToast(copied ? "Pesan disalin." : "Clipboard tidak tersedia di browser ini.");
+        return copied;
+      }
+    }
+    function retryLastResponse() {
+      if (generating || !lastUserPrompt) return;
+      if (messages.at(-1)?.role === "assistant") messages.pop();
+      if (lastAssistantArticle?.isConnected) lastAssistantArticle.remove();
+      lastAssistantText = "";
+      lastAssistantArticle = null;
+      syncActionButtons();
+      sendMessage(lastUserPrompt, { skipUserBubble: true });
+    }
     function createMessage(role, content = "") {
       if (welcome && welcome.isConnected) welcome.style.display = "none";
       const article = document.createElement("article");
@@ -277,8 +307,29 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       const wrap = document.createElement("div"); wrap.className = "bubble-wrap";
       const meta = document.createElement("div"); meta.className = "meta"; meta.textContent = role === "user" ? "USER" : "HYPERAI";
       const bubble = document.createElement("div"); bubble.className = "bubble"; if (content) bubble.innerHTML = renderMarkdown(content);
-      wrap.append(meta, bubble); article.append(avatar, wrap); chat.appendChild(article); chat.scrollTop = chat.scrollHeight;
-      return { article, bubble };
+      wrap.append(meta, bubble);
+      let copyButton = null, retryButton = null;
+      if (role === "assistant") {
+        const actions = document.createElement("div");
+        actions.className = "message-actions";
+        copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.className = "message-action message-copy";
+        copyButton.textContent = "Salin";
+        copyButton.disabled = !content;
+        copyButton.setAttribute("aria-label", "Salin jawaban ini");
+        copyButton.addEventListener("click", () => copyText(bubble.innerText || bubble.textContent || ""));
+        retryButton = document.createElement("button");
+        retryButton.type = "button";
+        retryButton.className = "message-action message-retry";
+        retryButton.textContent = "↻ Coba lagi";
+        retryButton.hidden = true;
+        retryButton.addEventListener("click", retryLastResponse);
+        actions.append(copyButton, retryButton);
+        wrap.appendChild(actions);
+      }
+      article.append(avatar, wrap); chat.appendChild(article); chat.scrollTop = chat.scrollHeight;
+      return { article, bubble, copyButton, retryButton };
     }
     function syncActionButtons() { copyLastBtn.disabled = !lastAssistantText; regenBtn.disabled = !lastUserPrompt || generating; }
     function setGenerating(value) {
@@ -310,6 +361,8 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       const assistantMessage = createMessage("assistant");
       const aiBubble = assistantMessage.bubble;
       lastAssistantArticle = assistantMessage.article;
+      const copyMessageBtn = assistantMessage.copyButton;
+      const retryMessageBtn = assistantMessage.retryButton;
       aiBubble.innerHTML = '<span class="typing" aria-label="HyperAI sedang mengetik"><i></i><i></i><i></i></span>';
       closePickers();
       setGenerating(true); streamStatus.textContent = "HyperAI sedang menyiapkan respons.";
@@ -336,16 +389,20 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
         streamDecoder.finish();
         try { await reader.cancel(); } catch { /* stream may already be closed */ }
         if (!fullText.trim()) throw new Error("Respons kosong. Model mungkin tidak kompatibel atau sedang tidak tersedia.");
-        messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText; updateStatus("Siap", "");
+        messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText;
+        if (copyMessageBtn) copyMessageBtn.disabled = false;
+        updateStatus("Siap", "");
         streamStatus.textContent = "Respons HyperAI selesai.";
       } catch (error) {
         if (error?.name === "AbortError") {
           streamStatus.textContent = "Respons dihentikan.";
           aiBubble.innerHTML = `<p><em>${fullText ? "Respons dihentikan. Teks yang sudah diterima belum disimpan ke riwayat model." : "Percakapan dihentikan."}</em></p>`;
+          if (retryMessageBtn) retryMessageBtn.hidden = false;
         } else {
           streamStatus.textContent = "Respons gagal dimuat.";
           aiBubble.innerHTML = `<p style="color:var(--danger)"><strong>Gagal:</strong> ${escapeHTML(error?.message || "Terjadi kesalahan yang tidak diketahui.")}</p>`;
           requestHadError = true;
+          if (retryMessageBtn) retryMessageBtn.hidden = false;
           showToast("Gagal memuat respons. Cek model/backend lalu coba lagi."); updateStatus("Error", "error");
         }
       } finally {
@@ -360,23 +417,8 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       activeController?.abort(); messages = []; lastUserPrompt = ""; lastAssistantText = ""; lastAssistantArticle = null;
       chat.replaceChildren(welcome); welcome.style.display = ""; setGenerating(false); updateStatus("Siap", ""); syncActionButtons(); showToast("Percakapan dibersihkan.");
     });
-    copyLastBtn.addEventListener("click", async () => {
-      if (!lastAssistantText) return;
-      try { await navigator.clipboard.writeText(lastAssistantText); showToast("Jawaban terakhir disalin!"); }
-      catch {
-        const temporary = document.createElement("textarea"); temporary.value = lastAssistantText; temporary.setAttribute("readonly", "");
-        temporary.style.position = "fixed"; temporary.style.opacity = "0"; document.body.appendChild(temporary); temporary.select();
-        let copied = false; try { copied = document.execCommand("copy"); } catch { copied = false; }
-        temporary.remove(); showToast(copied ? "Jawaban terakhir disalin!" : "Clipboard tidak tersedia di browser ini.");
-      }
-    });
-    regenBtn.addEventListener("click", () => {
-      if (generating || !lastUserPrompt) return;
-      if (messages.at(-1)?.role === "assistant") messages.pop();
-      if (lastAssistantArticle?.isConnected) lastAssistantArticle.remove();
-      lastAssistantText = ""; lastAssistantArticle = null; syncActionButtons();
-      sendMessage(lastUserPrompt, { skipUserBubble: true });
-    });
+    copyLastBtn.addEventListener("click", () => copyText(lastAssistantText));
+    regenBtn.addEventListener("click", retryLastResponse);
     document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => {
       promptInput.value = button.dataset.prompt || ""; autoResize(); promptInput.focus();
     }));
