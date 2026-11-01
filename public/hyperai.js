@@ -355,6 +355,10 @@ import { escapeHTML, renderMarkdown } from "./markdown.js";
       const prompt = String(customPrompt ?? promptInput.value).trim();
       if (!prompt) return;
       const skipUserBubble = Boolean(options.skipUserBubble);
+      if (lastAssistantArticle?.isConnected) {
+        const previousRetry = lastAssistantArticle.querySelector(".message-retry");
+        if (previousRetry) previousRetry.hidden = true;
+      }
       lastUserPrompt = prompt; lastAssistantText = ""; lastAssistantArticle = null; syncActionButtons();
       if (!skipUserBubble) { messages.push({ role: "user", content: prompt }); createMessage("user", prompt); }
       promptInput.value = ""; autoResize();
