@@ -286,19 +286,9 @@ The following documents are **drafts for legal review**, not proof of regulatory
 
 Layanan dan proyek pihak ketiga yang dirujuk oleh HyperAI tetap menjadi milik pemilik masing-masing. Rincian kredit, lisensi, serta panduan pencatatan asset tersedia di [`ATTRIBUTIONS.md`](ATTRIBUTIONS.md).
 
-## 🌐 Kontak
+## 🌐 Kontak & Pelaporan
 
-**Project:** HyperAI  
-**Developer:** HyperGaruda (`Hanzet22`)
-
-- GitHub: [Hanzet22](https://github.com/Hanzet22)
-- Instagram: [@muhamad_farhannn_](https://www.instagram.com/muhamad_farhannn_/)
-- Douyin: [Profile link](https://v.douyin.com/P0Qx2tl0KSA/)
-- Behance: [farhanzet_22](https://www.behance.net/farhanzet_22)
-- Telegram: [@Hypergaruda](https://t.me/Hypergaruda)
-- Email kolaborasi: `hypergarudatkj@gmail.com`
-
-Untuk keselamatan dan privasi, hindari memublikasikan nomor telepon pribadi, nomor pembayaran, atau alamat rumah di dokumentasi repository. Gunakan kanal kontak proyek yang memang siap menerima pesan publik.
+Untuk pertanyaan teknis, bug report, dan kontribusi, gunakan [GitHub Issues](https://github.com/Hanzet22/hyperai-openrouter-backend/issues). Jangan memublikasikan nomor telepon, alamat rumah, akun pribadi, kredensial, atau informasi pembayaran dalam issue. Gunakan data yang sudah disamarkan saat melaporkan masalah.
 
 ## 📜 Lisensi
 
