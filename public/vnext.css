@@ -222,3 +222,30 @@ html[data-theme="light"] { --faint: #59677d; }
   .header-actions { max-width: 78%; gap: 3px; }
   #settingsBtn { min-width: 44px; width: 44px; }
 }
+
+
+/* Per-message actions keep copy/retry controls close to the relevant response. */
+.message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.message-action {
+  min-height: 36px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--muted);
+  background: var(--panel);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.message-action:disabled { opacity: .45; cursor: not-allowed; }
+.message-action:hover:not(:disabled) { color: var(--text); border-color: var(--cyan); }
+.message-action:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+@media(max-width:560px) {
+  .message-action { min-height: 40px; padding-inline: 13px; }
+}
