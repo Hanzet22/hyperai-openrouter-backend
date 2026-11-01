@@ -210,3 +210,15 @@ html[data-theme="light"] { --faint: #59677d; }
 @media(prefers-reduced-motion:reduce) {
   .settings-dialog,.settings-dialog * { scroll-behavior:auto !important; transition:none !important; }
 }
+
+
+/* Keep the header usable when all controls are present on narrow phones. */
+@media (max-width: 560px) {
+  .header-actions { max-width: 74%; flex-wrap: wrap; justify-content: flex-end; }
+  #settingsBtn { min-width: 44px; width: 44px; padding: 0; overflow: hidden; font-size: 0; }
+  #settingsBtn::before { content: "⚙️"; font-size: 17px; }
+}
+@media (max-width: 360px) {
+  .header-actions { max-width: 78%; gap: 3px; }
+  #settingsBtn { min-width: 44px; width: 44px; }
+}
