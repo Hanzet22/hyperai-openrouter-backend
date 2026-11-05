@@ -130,3 +130,16 @@ test("budget guard is optional until explicitly configured and is fail-closed on
   assert.match(source, /BUDGET_GUARD_UNAVAILABLE/);
   assert.match(source, /DAILY_REQUEST_LIMIT/);
 });
+
+test("chat streaming has a hard byte ceiling on both supported stream adapters", async () => {
+  const source = await readFile(new URL("../api/chat.js", import.meta.url), "utf8");
+  assert.match(source, /MAX_CHAT_STREAM_BYTES = 16 \* 1024 \* 1024/);
+  assert.equal((source.match(/totalBytes > MAX_CHAT_STREAM_BYTES/g) || []).length, 2);
+  assert.equal((source.match(/stream\.destroy\(\)/g) || []).length >= 2, true);
+});
+
+test("speech provider error text is bounded before it is discarded", async () => {
+  const source = await readFile(new URL("../api/speech.js", import.meta.url), "utf8");
+  assert.match(source, /readUpstreamText\(upstream, 16 \* 1024\)/);
+  assert.doesNotMatch(source, /upstream\.text\(\)/);
+});
