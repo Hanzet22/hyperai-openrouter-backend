@@ -121,3 +121,52 @@ test("GitHub Actions third-party actions are pinned to full commit SHAs", async 
     assert.match(ref, /@[a-f0-9]{40}$/, `workflow action must be pinned to a full SHA: ${ref}`);
   }
 });
+
+
+test("all six API routes enter through the shared POST, origin, and rate-limit gate", async () => {
+  const routes = ["chat", "decisions", "embeddings", "moderate", "rerank", "speech"];
+  for (const route of routes) {
+    const source = await readFile(new URL(`../api/${route}.js`, import.meta.url), "utf8");
+    assert.match(source, new RegExp(`preparePost\\\\(req,\\\\s*res,\\\\s*["']${route}["']\\\\)`), `${route} must use preparePost`);
+  }
+});
+
+test("every upstream route is protected by the shared concurrency guard", async () => {
+  const directGuardRoutes = ["chat", "speech"];
+  const forwardedRoutes = ["decisions", "embeddings", "moderate", "rerank"];
+  for (const route of directGuardRoutes) {
+    const source = await readFile(new URL(`../api/${route}.js`, import.meta.url), "utf8");
+    assert.match(source, /withUpstreamGuard\\(/, `${route} must acquire a concurrency lease`);
+  }
+  for (const route of forwardedRoutes) {
+    const source = await readFile(new URL(`../api/${route}.js`, import.meta.url), "utf8");
+    assert.match(source, /forwardJson\\(/, `${route} must use the guarded JSON forwarder`);
+  }
+  const shared = await readFile(new URL("../lib/openrouter.js", import.meta.url), "utf8");
+  assert.match(shared, /export async function forwardJson[\\s\\S]*?return withUpstreamGuard\\(/);
+});
+
+test("production rate limiting fails closed when Redis configuration is unavailable", async () => {
+  const source = await readFile(new URL("../lib/rate-limit.js", import.meta.url), "utf8");
+  assert.match(source, /deploymentEnvironment === "production" \\|\\| deploymentEnvironment === "preview"/);
+  assert.match(source, /if \\(!routeLimit \\|\\| !ip \\|\\| !config\\) return unavailable/);
+  assert.match(source, /RATE_LIMIT_UNAVAILABLE/);
+});
+
+test("deployment security headers are present in Vercel configuration", async () => {
+  const config = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  const headers = config.headers.find((entry) => entry.source === "/(.*)")?.headers || [];
+  const values = new Map(headers.map(({ key, value }) => [key.toLowerCase(), value]));
+  assert.equal(values.get("x-content-type-options"), "nosniff");
+  assert.equal(values.get("x-frame-options"), "DENY");
+  assert.equal(values.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.match(values.get("strict-transport-security") || "", /max-age=31536000/);
+  assert.match(values.get("permissions-policy") || "", /camera=\\(\\)/);
+});
+
+test("all six API routes have explicit Vercel function duration configuration", async () => {
+  const config = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  for (const route of ["chat", "decisions", "embeddings", "moderate", "rerank", "speech"]) {
+    assert.ok(Number.isInteger(config.functions?.[`api/${route}.js`]?.maxDuration), `${route} maxDuration must be explicit`);
+  }
+});
