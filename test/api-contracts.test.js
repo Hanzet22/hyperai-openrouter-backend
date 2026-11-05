@@ -167,3 +167,23 @@ test("shared request body ceiling rejects oversized JSON before route processing
     assert.equal(res.json().error.code, "REQUEST_BODY_TOO_LARGE");
   });
 });
+
+test("speech rejects a streamed audio body above the 8 MiB ceiling", async () => {
+  await withEnvironment({ OPENROUTER_API_KEY: "test-key" }, async () => {
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(8 * 1024 * 1024));
+        controller.enqueue(new Uint8Array(1));
+      }
+    });
+    await withFetch(async () => new Response(body, {
+      status: 200,
+      headers: { "content-type": "audio/mpeg" }
+    }), async () => {
+      const res = new MockResponse();
+      await speech(makeRequest({ body: { input: "hello", voice: "test-voice" } }), res);
+      assert.equal(res.statusCode, 502);
+      assert.equal(res.json().error.code, "AUDIO_RESPONSE_TOO_LARGE");
+    });
+  });
+});
