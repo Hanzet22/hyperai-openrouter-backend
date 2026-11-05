@@ -26,6 +26,7 @@ const MAX_MESSAGES = 80;
 const MAX_MESSAGE_CHARS = 30_000;
 const MAX_TOTAL_CHARS = 120_000;
 const MAX_CHAT_OUTPUT_TOKENS = 2048;
+const MAX_CHAT_STREAM_BYTES = 16 * 1024 * 1024;
 const THINKING_LEVELS = new Set(["off", "low", "medium", "high", "ultra"]);
 
 // Keep in sync with the active model picker in index.html.
@@ -174,6 +175,7 @@ async function pipeChatCompletionStream(upstream, res, model) {
   const stream = Readable.fromWeb(upstream.body);
   const decoder = new TextDecoder();
   let buffer = "";
+  let totalBytes = 0;
   let usageLogged = false;
 
   const inspectBlock = async (block) => {
@@ -188,6 +190,13 @@ async function pipeChatCompletionStream(upstream, res, model) {
 
   for await (const chunk of stream) {
     if (res.destroyed) break;
+    totalBytes += chunk.byteLength;
+    if (totalBytes > MAX_CHAT_STREAM_BYTES) {
+      stream.destroy();
+      const error = new Error("Chat upstream response exceeded the configured size limit.");
+      error.code = "UPSTREAM_RESPONSE_TOO_LARGE";
+      throw error;
+    }
     buffer += decoder.decode(chunk, { stream: true });
     let separator;
     while ((separator = buffer.search(/\r?\n\r?\n/)) !== -1) {
@@ -216,6 +225,7 @@ async function pipeResponsesAsChatStream(upstream, res, model) {
   const stream = Readable.fromWeb(upstream.body);
   const decoder = new TextDecoder();
   let buffer = "";
+  let totalBytes = 0;
   let sawDone = false;
 
   const processBlock = async (block) => {
@@ -240,6 +250,13 @@ async function pipeResponsesAsChatStream(upstream, res, model) {
 
   for await (const chunk of stream) {
     if (res.destroyed || sawDone) break;
+    totalBytes += chunk.byteLength;
+    if (totalBytes > MAX_CHAT_STREAM_BYTES) {
+      stream.destroy();
+      const error = new Error("Chat upstream response exceeded the configured size limit.");
+      error.code = "UPSTREAM_RESPONSE_TOO_LARGE";
+      throw error;
+    }
     buffer += decoder.decode(chunk, { stream: true });
     let separator;
     while ((separator = buffer.search(/\r?\n\r?\n/)) !== -1) {
