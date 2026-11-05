@@ -223,7 +223,7 @@ async function pipeResponsesAsChatStream(upstream, res) {
 }
 
 export default async function handler(req, res) {
-  const body = preparePost(req, res);
+  const body = await preparePost(req, res, "chat");
   if (!body) return;
 
   const model = typeof body.model === "string" ? body.model.trim() : "";
