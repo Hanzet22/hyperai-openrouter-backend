@@ -368,4 +368,4 @@ See [Security 0.6 — Deployment Readiness](docs/security/0.6-deployment-readine
 
 ### Application security hardening (Security 0.7)
 
-Security 0.7 records the application security review, pins Markdown-rendering and fixed-upstream-target invariants with regression tests, and caps buffered speech responses at 8 MiB. This does not constitute a penetration test or browser-based XSS assessment. See [Security 0.7 — Application Security Hardening](docs/security/0.7-application-hardening.md).
+Security 0.7 records the application security review, renders untrusted chat messages with DOM creation/text nodes instead of HTML string sinks, validates HTTP(S) links, avoids reflecting raw provider error bodies, and caps buffered speech responses at 8 MiB. Regression tests include inline-script syntax checks and streamed oversized-audio coverage. This does not constitute a penetration test or a real-browser XSS assessment. See [Security 0.7 — Application Security Hardening](docs/security/0.7-application-hardening.md).
