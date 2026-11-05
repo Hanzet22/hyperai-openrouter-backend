@@ -8,7 +8,7 @@
 
 The current project is a small serverless AI frontend/backend with six public API routes. It has no application database, account system, password authentication, OAuth integration, or application-managed session cookies. The backend keeps the OpenRouter key server-side, validates input, and constructs upstream payloads explicitly.
 
-**Highest-risk finding:** the API routes are publicly callable and there is no application authentication, per-user authorization, rate limiting, or quota enforcement. CORS does not fix this. A third party may be able to consume the deployment owner's upstream quota/costs.
+**Highest-risk finding:** the API routes remain publicly callable and there is no user-account authentication or per-user authorization. Security 0.1 adds shared Redis-backed per-IP and global request throttling to all six POST routes. This reduces abuse risk but is not authentication and does not guarantee a daily provider-spend cap. CORS does not fix public access.
 
 **Immediate source changes made during this review:**
 
@@ -16,19 +16,20 @@ The current project is a small serverless AI frontend/backend with six public AP
 2. Replaced the API-key-shaped placeholder in `.env.example` with a clearly non-secret placeholder.
 3. Removed direct personal phone/payment contact details from the current `public/index.html`.
 4. Added direct links to the project source repository and AGPL license in the UI.
-5. No production API contract or model-routing behavior was intentionally changed.
+5. Added `lib/rate-limit.js` and integrated it into all six POST routes. Production requires Upstash Redis REST credentials; requests fail closed with HTTP 503 if the limiter is not configured or unavailable. Per-route and global 60-second limits return HTTP 429 when reached.
+6. Added rate-limit regression tests and a deployment setup guide. No production API request/response contract or model-routing behavior was intentionally changed apart from 429/503 protection responses.
 
 **Important historical exposure note:** removing contact details from the current file does not erase older Git commits. The old file content may remain accessible in repository history. History rewriting was not performed.
 
 ## Evidence boundaries
 
-- Current source tree contains no `package-lock.json`, `npm-shrinkwrap.json`, or runtime dependencies in `package.json`.
+- Current source tree contains no `package-lock.json`, `npm-shrinkwrap.json`, or third-party runtime dependencies in `package.json`. The rate limiter uses Node.js built-ins and the Upstash Redis REST API directly.
 - Current `.env.example` contains only a placeholder. No real OpenRouter key was identified in the current default-branch code search. This is not a complete scan of every historical commit, Git object, deployment log, Vercel environment variable, or external secret store.
 - `.gitignore` excludes `.env`, `.env.*` except `.env.example`, `node_modules/`, and `.vercel/`.
 - No database, admin dashboard, OAuth flow, password handling, or application cookie-setting code was found in the current tree.
 - The chat UI keeps conversation messages in memory during the page session. The browser stores display preferences in `localStorage` (theme, motion, selected model, and thinking mode); it does not intentionally persist chat history there.
 - API requests are forwarded to OpenRouter over HTTPS. The application's own data retention does not determine OpenRouter, model-provider, or hosting-provider retention.
-- Vercel account settings, actual deployed headers, environment variables, firewall, log retention, backups, and access controls cannot be verified from this repository review.
+- Vercel account settings, actual deployed headers, environment variables, firewall, log retention, backups, and access controls cannot be verified from this repository review. The new rate limiter's production behavior is not active until both Upstash variables are configured and the deployment is redeployed.
 
 ## A. Eighteen security risks
 
@@ -37,7 +38,7 @@ The current project is a small serverless AI frontend/backend with six public AP
 | 1 | Vulnerable dependencies | No direct npm dependencies or lockfile are present. The workflow's two GitHub Actions are now pinned to verified full commit SHAs, and Dependabot is configured to check GitHub Actions and npm updates weekly. | **No app packages found; CI supply-chain gap** | **Completed:** pin Actions to verified full commit SHAs and enable weekly Dependabot checks. Add a lockfile and dependency audit when runtime packages are introduced. |
 | 2 | Malicious packages | No npm packages are declared. The workflow uses SHA-pinned `actions/checkout` and `actions/setup-node`; Dependabot is configured to check GitHub Actions updates weekly. | **No npm package finding; partial** | **Completed:** pin Actions; continue reviewing publisher, permissions, and release provenance when updates arrive. |
 | 3 | Prompt injection | User text is sent to an LLM. The moderation route tells the model not to follow instructions in the submitted content. The current chat path does not expose internal database, filesystem, or privileged application tools to the model; Web Search is an optional external tool. Prompt injection can still manipulate answers and search behavior. | **Residual model risk** | Treat retrieved/user content as untrusted; keep tool permissions narrow; never place secrets in prompts; add adversarial tests before adding agent tools. |
-| 4 | Unpermissioned AI access | All six API routes are public POST endpoints. No user identity, API-client credential, session, or per-user authorization is enforced. | **Confirmed — HIGH** | Add a server-verified access model and abuse controls before broad public release. Do not rely on CORS. |
+| 4 | Unpermissioned AI access | All six routes remain public to anonymous callers; no user identity, API-client credential, session, or per-user authorization is enforced. Security 0.1 now applies shared Upstash-backed per-IP route limits and a global request ceiling. | **Abuse throttling implemented in source; authentication absent; deployment pending** | Configure Upstash in Vercel and verify production. If a private API mode is required, add server-verifiable identity; never put a shared secret in browser code. |
 | 5 | Excessive DB permissions | No application database or database credentials are present in the repository. | **Not applicable to current code** | Reassess if a database is introduced; use least-privilege service roles and row-level access controls. |
 | 6 | Missing audit logs | No application-level security audit event system was found. Vercel platform logs may exist but are not an application audit trail and were not inspected. | **Gap / platform unverified** | Add structured, redacted security events for rate limits, auth decisions, provider failures, and configuration changes. Never log prompts or secrets by default. |
 | 7 | No security monitoring | No alerting, anomaly detection, or incident notification integration was found in source. | **Confirmed source gap** | Configure deployment/provider usage alerts and error/abuse alerts in the hosting account. |
@@ -60,12 +61,12 @@ The current project is a small serverless AI frontend/backend with six public AP
 | 1 | Hide API keys | Backend reads `OPENROUTER_API_KEY` from server environment; it is not intentionally embedded in frontend source. Current branch search found only the example placeholder, now replaced. Actual Vercel values and full Git history were not accessible. | **Source reviewed; external/history pending** |
 | 2 | Check environment variables | `.env.example` and `.gitignore` reviewed. Actual Production/Preview/Development values cannot be inspected from this connection. | **Partial** |
 | 3 | Protect admin routes | No admin routes currently exist. | **Not applicable** |
-| 4 | Add proper authentication | No application authentication exists on the six public endpoints. | **Required — HIGH** |
+| 4 | Add proper authentication | No application authentication exists. The current product is an anonymous browser app; a client-side shared token would be public and would not provide meaningful authentication. | **Not implemented; separate design required for private API clients** |
 | 5 | Check user access | No user identity or role model exists. | **Required with authentication** |
 | 6 | Sanitize forms | Chat input is length-limited in the browser and validated server-side. Other routes validate their own request fields. | **Partial; extend schema tests** |
 | 7 | Protect against XSS | Frontend escapes HTML before applying its limited Markdown rendering and only auto-links HTTP(S) URLs. It still uses a custom renderer and `innerHTML`; this is not a formal sanitizer guarantee. | **Partial; add XSS regression tests and consider a maintained sanitizer/parser** |
-| 8 | Add rate limiting | No rate limiter or per-user quota was found. | **Required — HIGH** |
-| 9 | Secure API endpoints | Method checks, input validation, model allowlists, and server-side secret use exist. Authentication, abuse controls, and quotas are absent. | **Partial — HIGH** |
+| 8 | Add rate limiting | `lib/rate-limit.js` now enforces atomic Upstash Redis per-IP route limits and a global 120-request/60-second ceiling across all six POST endpoints. Production fails closed if Redis credentials/service or the trusted client-IP header is unavailable. | **Implemented in source; Vercel/Upstash activation and production verification pending** |
+| 9 | Secure API endpoints | Method checks, input validation, model allowlists, server-side secrets, and shared rate limiting exist in source. User authentication and per-user quotas remain absent. | **Partial — production configuration pending** |
 | 10 | Check CORS settings | Optional `ALLOWED_ORIGIN` is an origin filter, but requests without an Origin header are allowed. CORS does not authenticate non-browser clients. | **Partial; keep CORS and add auth** |
 | 11 | Add security headers | Five baseline headers added to `vercel.json`. | **Source fixed; deployment verification pending** |
 | 12 | Turn off debug mode | No explicit debug mode or debug flag was found. Actual Vercel build/runtime settings were not inspected. | **Source no finding; deployment pending** |
@@ -105,7 +106,7 @@ The current project is a small serverless AI frontend/backend with six public AP
 
 ## D. Immediate remediation priorities
 
-1. **Access and cost abuse:** add server-verified authentication/access policy, rate limiting, per-user/IP quotas, request concurrency limits, and an emergency kill switch. CORS alone is insufficient.
+1. **Access and cost abuse:** configure Upstash credentials in Vercel and verify the deployed rate limiter. The current IP/global request ceilings reduce bursts but are not a daily cost cap or user authentication. Keep provider budget controls and consider Vercel Firewall/WAF rules.
 2. **Deployment verification:** deploy the header change to a preview and production, then inspect actual response headers on both static pages and API responses.
 3. **Secret assurance:** inspect Vercel Production/Preview/Development variables privately; rotate any key that was ever committed or logged. Scan full Git history before claiming secret-free history.
 4. **CI supply chain:** pin GitHub Actions to reviewed full commit SHAs; protect `main`; require the baseline test job and code review.
@@ -126,6 +127,10 @@ Applicability depends on the service, its operator, audience, processing activit
 
 ## F. External technical references
 
+- [Upstash Redis REST API — EVAL](https://upstash.com/docs/redis/commands/scripting/eval) — atomic Lua scripting is supported through a POST with a JSON command array.
+- [Vercel Request Headers](https://vercel.com/docs/headers/request-headers) — documents `x-real-ip` / `x-forwarded-for` as client IP headers available to Vercel Functions.
+- [Upstash Rate Limit SDK overview](https://upstash.com/docs/redis/sdks/ratelimit-ts/overview) — documents distributed HTTP-based rate limiting for serverless environments.
+
 - [OWASP Serverless FaaS Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Serverless_FaaS_Security_Cheat_Sheet.html)
 - [OWASP REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html)
 - [OWASP Node.js Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html)
@@ -142,3 +147,17 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 
 - GitHub Actions baseline test run after the security configuration changes: [Run 42013111580](https://github.com/Hanzet22/hyperai-openrouter-backend/actions/runs/42013111580) — **success** on Node.js 22.
 - The run confirms the repository test suite still passes after the source/configuration edits. It does not verify production deployment headers, external environment variables, or legal compliance.
+
+
+## G. Security 0.1 implementation record
+
+- Added `lib/rate-limit.js` using one atomic Upstash Redis Lua `EVAL` operation per accepted POST request.
+- Integrated the limiter before request-body parsing and before any OpenRouter forwarding in all six routes.
+- Per-IP limits per 60 seconds: chat 8; decisions 12; embeddings 20; moderation 20; rerank 10; speech 4.
+- Global limit: 120 requests per 60 seconds across all six routes.
+- Uses Vercel's `x-real-ip` header; hashes the IP in Redis keys; Redis counters expire after the window.
+- HTTP 429 includes `Retry-After` and rate-limit headers. Redis/configuration/IP failures return HTTP 503 (fail closed).
+- Added `test/rate-limit.test.js` for atomic command construction, hashed identifiers, 429 behavior, Redis outage behavior, missing configuration, and route blocking.
+- Setup instructions: [Security 0.1 rate-limit setup](0.1-rate-limit-setup.md).
+- **Deployment remains pending:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel Production (and any intended Preview/Development environment), redeploy, and verify a successful request plus an expected 429. This repository connection cannot inspect or change those private environment variables.
+- IP-based throttling is not authentication, not a per-user quota, and not a guaranteed daily spending cap. The current frontend remains anonymous/public.
