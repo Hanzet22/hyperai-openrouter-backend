@@ -175,9 +175,10 @@ async function pipeChatCompletionStream(upstream, res, model) {
   let buffer = "";
   let usageLogged = false;
 
-  const inspectBlock = (block) => {
-    if (usageLogged) return;
+  const inspectBlock = async (block) => {
     const event = extractResponseEvent(block);
+    if (event?.error) await recordResilienceOutcome(model, "failure");
+    if (usageLogged) return;
     if (event?.usage) {
       recordUsage("chat", event.model || model, event.usage, event.id);
       usageLogged = true;
@@ -192,12 +193,12 @@ async function pipeChatCompletionStream(upstream, res, model) {
       const block = buffer.slice(0, separator);
       const match = buffer.slice(separator).match(/^\r?\n\r?\n/);
       buffer = buffer.slice(separator + (match ? match[0].length : 2));
-      inspectBlock(block);
+      await inspectBlock(block);
     }
     await writeWithBackpressure(res, chunk);
   }
   buffer += decoder.decode();
-  if (buffer.trim()) inspectBlock(buffer);
+  if (buffer.trim()) await inspectBlock(buffer);
   if (!res.destroyed && !res.writableEnded) res.end();
 }
 
