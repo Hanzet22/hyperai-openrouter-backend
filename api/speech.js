@@ -1,5 +1,5 @@
 /** Free text-to-speech helper. POST /api/speech; returns raw audio bytes. */
-import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, mapUpstreamFailure, withUpstreamGuard, fetchWithResilience, recordResilienceOutcome } from "../lib/openrouter.js";
+import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, mapUpstreamFailure, withUpstreamGuard, fetchWithResilience, recordResilienceOutcome, readUpstreamText } from "../lib/openrouter.js";
 
 const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
@@ -66,13 +66,13 @@ export default async function handler(req, res) {
     }
 
     if (!upstream.ok) {
-      const text = await upstream.text();
+      const text = await readUpstreamText(upstream, 16 * 1024);
       return fail(res, upstream.status, extractUpstreamMessage(text, upstream.status), `OPENROUTER_${upstream.status}`);
     }
     const contentType = upstream.headers.get("content-type") || "";
     if (!contentType.startsWith("audio/")) {
       await recordResilienceOutcome(MODEL, "failure");
-      const text = await upstream.text();
+      const text = await readUpstreamText(upstream, 16 * 1024);
       return fail(res, 502, extractUpstreamMessage(text, 502), "INVALID_AUDIO_RESPONSE");
     }
     try {

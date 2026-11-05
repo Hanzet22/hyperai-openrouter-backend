@@ -11,8 +11,9 @@ test("release gate inventories exactly the six deployed API handlers", async () 
     assert.ok(source.includes('preparePost(req, res, "' + ROUTES[index] + '")'));
   }
   const config = JSON.parse(await read("../vercel.json"));
-  const configured = Object.keys(config.functions).map((path) => path.slice(4, -3)).sort();
+  const configured = Object.keys(config.functions).filter((path) => path !== "api/session.js").map((path) => path.slice(4, -3)).sort();
   assert.deepEqual(configured, [...ROUTES].sort());
+  assert.equal(config.functions["api/session.js"].maxDuration, 10);
 });
 
 test("shared request boundary enforces method, AI kill switch, rate limit and body cap", async () => {
