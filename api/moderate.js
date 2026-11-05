@@ -18,5 +18,5 @@ export default async function handler(req, res) {
       { role: "user", content: text }
     ]
   };
-  return forwardJson(req, res, "/chat/completions", payload);
+  return forwardJson(req, res, "/chat/completions", payload, "moderate");
 }
