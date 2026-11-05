@@ -3,6 +3,37 @@ import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamM
 
 const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
+const MAX_AUDIO_RESPONSE_BYTES = 8 * 1024 * 1024;
+
+async function readAudioResponse(response) {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_AUDIO_RESPONSE_BYTES) {
+    const error = new Error("Audio response exceeds the 8 MiB server limit.");
+    error.code = "AUDIO_RESPONSE_TOO_LARGE";
+    throw error;
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_AUDIO_RESPONSE_BYTES) {
+        await reader.cancel();
+        const error = new Error("Audio response exceeds the 8 MiB server limit.");
+        error.code = "AUDIO_RESPONSE_TOO_LARGE";
+        throw error;
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return Buffer.concat(chunks, total);
+}
 
 export default async function handler(req, res) {
   const body = await preparePost(req, res, "speech");
@@ -42,7 +73,7 @@ export default async function handler(req, res) {
       return fail(res, 502, extractUpstreamMessage(text, 502), "INVALID_AUDIO_RESPONSE");
     }
     try {
-      const audio = Buffer.from(await upstream.arrayBuffer());
+      const audio = await readAudioResponse(upstream);
       if (!audio.length) {
         await recordResilienceOutcome(MODEL, "failure");
         return fail(res, 502, "Audio provider mengembalikan file kosong.", "EMPTY_AUDIO_RESPONSE");
