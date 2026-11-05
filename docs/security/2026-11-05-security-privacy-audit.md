@@ -174,3 +174,19 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 - IP-based throttling is not authentication, not a per-user quota, and not a guaranteed daily spending cap. The current frontend remains anonymous/public.
 
 - GitHub Actions run [42018000381](https://github.com/Hanzet22/hyperai-openrouter-backend/actions/runs/42018000381) completed successfully on Node.js 22: **24 tests passed, 0 failed**, including the Vercel Preview enforcement test.
+
+
+## H. Security 0.3 implementation record — concurrency and resource protection
+
+- Added `lib/concurrency.js` with a distributed Redis lease semaphore using atomic Lua scripts and unique request tokens.
+- Global ceiling: 24 concurrent upstream operations. Route ceilings: chat 8, decisions 8, embeddings 8, moderation 8, rerank 6, speech 3.
+- Saturated capacity returns HTTP 429 `CONCURRENCY_LIMITED`; there is no unbounded in-memory queue.
+- Leases expire after 70 seconds to recover permits if a function instance is terminated before cleanup. Normal completion releases the lease in `finally`.
+- Added upstream deadlines: chat 55 seconds, speech 50 seconds, and JSON routes 25 seconds. These are below configured Vercel function duration ceilings.
+- Shared guard listens for response closure and request abort/error events, passes an AbortSignal to upstream fetch, and clears timers/listeners on completion.
+- Existing chat streaming backpressure behavior remains in place and now executes inside the shared concurrency guard.
+- Redis failures return HTTP 503; this protection depends on the same Upstash Production/Preview configuration required by Security 0.1.
+- Added `test/concurrency.test.js` for permit acquisition/release, saturated capacity, missing Redis configuration, exception cleanup, and client-disconnect cancellation.
+- Setup and limitations: [Security 0.3 concurrency and resource protection](0.3-concurrency-resource-protection.md).
+- **Activation remains pending:** the previously inspected Vercel Production/Preview environment did not contain the two Upstash variables. Configure them, redeploy, then verify runtime behavior before treating this control as active.
+- Residual risks: global slots are not per-user fair; lease expiry is a crash-recovery fallback; no production load test or real upstream timeout test has been run. Monitor Upstash operation usage because each accepted upstream request adds acquire/release operations in addition to the existing rate-limit call.
