@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { Script } from "node:vm";
-import { extractUpstreamMessage } from "../lib/openrouter.js";
+import { extractUpstreamMessage, mapUpstreamFailure } from "../lib/openrouter.js";
 
 const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 
@@ -70,4 +70,39 @@ test("upstream error bodies are not reflected to API clients", () => {
   const message = extractUpstreamMessage(secretLikePayload, 429);
   assert.equal(message, "OpenRouter request failed (HTTP 429).");
   assert.doesNotMatch(message, /internal trace|Authorization|example-secret-token/);
+});
+
+test("transport failures map to a trusted public error allowlist", () => {
+  const secretError = Object.assign(
+    new Error("request failed for https://internal.example with Authorization: Bearer secret-token"),
+    { status: 401, code: "UNTRUSTED_PROVIDER_ERROR" }
+  );
+  const mapped = mapUpstreamFailure(secretError);
+  assert.deepEqual(mapped, {
+    status: 502,
+    message: "OpenRouter connection failed.",
+    code: "UPSTREAM_CONNECTION_FAILED"
+  });
+  assert.doesNotMatch(JSON.stringify(mapped), /internal\.example|Authorization|secret-token|401/);
+});
+
+test("known internal resilience failures retain safe status and messages", () => {
+  assert.deepEqual(mapUpstreamFailure({ code: "RESILIENCE_UNAVAILABLE", message: "secret" }), {
+    status: 503,
+    message: "Upstream resilience protection is temporarily unavailable.",
+    code: "RESILIENCE_UNAVAILABLE"
+  });
+  assert.deepEqual(mapUpstreamFailure({ code: "UPSTREAM_CIRCUIT_OPEN", message: "secret" }), {
+    status: 503,
+    message: "The upstream provider is temporarily cooling down. Please retry later.",
+    code: "UPSTREAM_CIRCUIT_OPEN"
+  });
+  assert.equal(mapUpstreamFailure({ code: "UPSTREAM_TIMEOUT" }).status, 504);
+});
+
+test("chat stream errors do not forward raw provider messages", async () => {
+  const source = await readFile(new URL("../api/chat.js", import.meta.url), "utf8");
+  assert.match(source, /OpenRouter stream failed\. Please retry later\./);
+  assert.doesNotMatch(source, /String\(message\)\.slice\(0, 1000\)/);
+  assert.doesNotMatch(source, /OpenRouter connection failed:.*error\?\.message/s);
 });
