@@ -101,7 +101,9 @@ Untuk mengaktifkannya:
 
 Hasil pencarian juga dapat tidak tersedia, tidak lengkap, atau berubah. Pengguna sebaiknya memeriksa sumber asli untuk informasi penting.
 
-## 🛡️ Keamanan dan Batasan\n\nSecurity 1.1 implementation notes: [access sessions, daily usage guardrails, response-size limits, CSP report-only, and validation boundaries](docs/security/1.1-hardening.md).
+## 🛡️ Keamanan dan Batasan
+
+Security 1.1 implementation notes: [access sessions, daily usage guardrails, response-size limits, CSP report-only, and validation boundaries](docs/security/1.1-hardening.md).
 
 ### Secret management
 
