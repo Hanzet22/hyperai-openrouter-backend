@@ -140,6 +140,10 @@ Security 0.4 adds a Redis-coordinated circuit breaker scoped to the selected mod
 
 See the [Security, Privacy, and Compliance Audit](docs/security/2026-11-05-security-privacy-audit.md) for the reviewed risks, limitations, and outstanding work. The report is a source/configuration review, not a penetration test or legal compliance certification.
 
+### Upstream error boundaries (Security 0.9)
+
+Security 0.9 maps transport exceptions to a small, trusted set of public errors and prevents raw Responses API stream errors from being reflected to clients. Unknown provider/network exceptions become generic 502 responses; known circuit/resilience states retain generic 503 responses; timeouts become generic 504 responses. This reduces accidental disclosure of internal URLs, headers, provider diagnostics, and secret-like strings. It does not replace provider-side controls or a penetration test. See [Security 0.9 — Upstream Error Boundaries](docs/security/0.9-upstream-error-boundaries.md).
+
 ### CORS dan `ALLOWED_ORIGIN`
 
 `ALLOWED_ORIGIN` dapat membatasi origin browser yang diizinkan oleh kebijakan CORS backend. CORS **bukan autentikasi** dan tidak mencegah request non-browser atau request yang memalsukan header. Jangan menjadikan CORS sebagai satu-satunya perlindungan untuk endpoint yang memakai API key milik pemilik deployment.
