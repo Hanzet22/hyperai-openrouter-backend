@@ -206,3 +206,15 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 - Documentation: [Security 0.4 upstream reliability](0.4-upstream-reliability.md).
 - **Activation remains pending:** Security 0.1/0.3 already require the same Upstash variables, which were absent in the previously inspected Vercel Production/Preview metadata. Configure both variables, redeploy, and verify runtime behavior before treating the guards as active.
 - No production fault-injection, provider outage, load, or paid-generation test was performed. Use mocked tests or bounded owner-authorized staging verification.
+
+## J. Security 0.5 implementation record — observability
+
+- Added `lib/observability.js` with timestamped JSON events, an explicit field allowlist, and request lifecycle instrumentation.
+- All six API routes receive request-completion/abort telemetry centrally through `preparePost`; each request receives a generated `X-Request-Id`.
+- Added telemetry for provider usage, rate-limit rejection/unavailability, concurrency rejection/unavailability, circuit-open decisions, half-open probes, upstream outcomes, and Redis circuit-state write errors.
+- Prompt text, model output, request bodies, raw IP addresses, authorization headers, API keys, Redis tokens, and arbitrary exception messages are not accepted by the telemetry field allowlist.
+- Runtime output is sent to Vercel Function Runtime Logs. No external telemetry SDK, metrics database, dashboard, alert delivery, or log-export integration was added.
+- Added `test/observability.test.js` for JSON event shape, sensitive-field exclusion, request lifecycle logging, generated request IDs, and duplicate close-event suppression.
+- Documentation: [Security 0.5 observability and operational monitoring](0.5-observability-monitoring.md).
+- Runtime logs are operational telemetry, not a durable metrics store. Configure access controls and retention in the hosting account; no retention setting is changed by this source update.
+- CI and mocked tests do not establish production observability delivery or the health of the Upstash dependency. The previously noted Production/Preview Upstash activation requirement remains open.
