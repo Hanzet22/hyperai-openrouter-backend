@@ -34,8 +34,8 @@ The current project is a small serverless AI frontend/backend with six public AP
 
 | # | Risk | Finding | Status | Priority / next action |
 |---:|---|---|---|---|
-| 1 | Vulnerable dependencies | No direct npm dependencies or lockfile are present. This means there is no application dependency tree to audit with confidence; GitHub Actions still references third-party actions by mutable major tags. | **No app packages found; CI supply-chain gap** | Pin Actions to verified full commit SHAs; add lockfile only when dependencies are introduced; run dependency review/audit in CI when applicable. |
-| 2 | Malicious packages | No npm packages are declared. The workflow uses `actions/checkout@v4` and `actions/setup-node@v4`, which are external supply-chain dependencies and are not SHA-pinned. | **No npm package finding; partial** | Pin Actions and review publisher, permissions, and release provenance. |
+| 1 | Vulnerable dependencies | No direct npm dependencies or lockfile are present. The workflow's two GitHub Actions are now pinned to verified full commit SHAs, and Dependabot is configured to check GitHub Actions and npm updates weekly. | **No app packages found; CI supply-chain gap** | **Completed:** pin Actions to verified full commit SHAs and enable weekly Dependabot checks. Add a lockfile and dependency audit when runtime packages are introduced. |
+| 2 | Malicious packages | No npm packages are declared. The workflow uses SHA-pinned `actions/checkout` and `actions/setup-node`; Dependabot is configured to check GitHub Actions updates weekly. | **No npm package finding; partial** | **Completed:** pin Actions; continue reviewing publisher, permissions, and release provenance when updates arrive. |
 | 3 | Prompt injection | User text is sent to an LLM. The moderation route tells the model not to follow instructions in the submitted content. The current chat path does not expose internal database, filesystem, or privileged application tools to the model; Web Search is an optional external tool. Prompt injection can still manipulate answers and search behavior. | **Residual model risk** | Treat retrieved/user content as untrusted; keep tool permissions narrow; never place secrets in prompts; add adversarial tests before adding agent tools. |
 | 4 | Unpermissioned AI access | All six API routes are public POST endpoints. No user identity, API-client credential, session, or per-user authorization is enforced. | **Confirmed — HIGH** | Add a server-verified access model and abuse controls before broad public release. Do not rely on CORS. |
 | 5 | Excessive DB permissions | No application database or database credentials are present in the repository. | **Not applicable to current code** | Reassess if a database is introduced; use least-privilege service roles and row-level access controls. |
@@ -136,3 +136,9 @@ Applicability depends on the service, its operator, audience, processing activit
 The repository is **not ready to be described as fully secure or legally compliant**. The immediate header and public-contact cleanups are in source, but public API access control/rate limiting, deployment checks, secret-history verification, privacy/terms documentation, and child-safety assessment remain open.
 
 This report reflects only the reviewed repository snapshot and evidence available on 2026-11-05. Re-run it after significant code, provider, hosting, or policy changes.
+
+
+## G. Post-audit verification
+
+- GitHub Actions baseline test run after the security configuration changes: [Run 42013111580](https://github.com/Hanzet22/hyperai-openrouter-backend/actions/runs/42013111580) — **success** on Node.js 22.
+- The run confirms the repository test suite still passes after the source/configuration edits. It does not verify production deployment headers, external environment variables, or legal compliance.
