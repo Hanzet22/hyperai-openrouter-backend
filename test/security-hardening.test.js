@@ -106,3 +106,18 @@ test("chat stream errors do not forward raw provider messages", async () => {
   assert.doesNotMatch(source, /String\(message\)\.slice\(0, 1000\)/);
   assert.doesNotMatch(source, /OpenRouter connection failed:.*error\?\.message/s);
 });
+
+test("supply-chain baseline has no undeclared runtime or development packages", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.deepEqual(Object.keys(manifest.dependencies || {}), []);
+  assert.deepEqual(Object.keys(manifest.devDependencies || {}), []);
+});
+
+test("GitHub Actions third-party actions are pinned to full commit SHAs", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/baseline-tests.yml", import.meta.url), "utf8");
+  const actionRefs = [...workflow.matchAll(/^\s+uses:\s+([^\s]+)$/gm)].map((match) => match[1]);
+  assert.ok(actionRefs.length > 0, "expected at least one pinned workflow action");
+  for (const ref of actionRefs) {
+    assert.match(ref, /@[a-f0-9]{40}$/, `workflow action must be pinned to a full SHA: ${ref}`);
+  }
+});
