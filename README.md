@@ -110,6 +110,18 @@ Hasil pencarian juga dapat tidak tersedia, tidak lengkap, atau berubah. Pengguna
 - Jangan menaruh API key server di `index.html`, file JavaScript frontend, screenshot, log publik, atau issue GitHub.
 - Jika key terlanjur dipublikasikan, cabut/rotasi key melalui akun OpenRouter.
 
+### HTTP security headers
+
+Baseline response headers are configured in `vercel.json`: MIME sniffing protection, clickjacking protection, a strict referrer policy, HSTS, and a restrictive Permissions Policy. They must still be verified against the deployed site and API responses after deployment. A Content Security Policy is intentionally not enabled yet because the current frontend contains inline JavaScript and CSS; add one after a compatibility-tested migration.
+
+### Public API access
+
+The current API routes do not implement user authentication, per-user authorization, or rate limiting. Treat the deployment as a publicly callable service and do not expose it to broad public traffic until abuse controls and usage quotas are implemented. The model allowlist and CORS policy are not substitutes for authentication or rate limiting.
+
+### Security review record
+
+See the [Security, Privacy, and Compliance Audit](docs/security/2026-11-05-security-privacy-audit.md) for the reviewed risks, limitations, and outstanding work. The report is a source/configuration review, not a penetration test or legal compliance certification.
+
 ### CORS dan `ALLOWED_ORIGIN`
 
 `ALLOWED_ORIGIN` dapat membatasi origin browser yang diizinkan oleh kebijakan CORS backend. CORS **bukan autentikasi** dan tidak mencegah request non-browser atau request yang memalsukan header. Jangan menjadikan CORS sebagai satu-satunya perlindungan untuk endpoint yang memakai API key milik pemilik deployment.
