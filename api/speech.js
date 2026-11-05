@@ -86,11 +86,12 @@ export default async function handler(req, res) {
       const generationId = upstream.headers.get("x-generation-id");
       if (generationId) res.setHeader("X-Generation-Id", generationId);
       res.end(audio);
-    } catch {
+    } catch (error) {
       await recordResilienceOutcome(MODEL, "failure");
       if (!res.destroyed && !res.writableEnded) {
         const timedOut = signal.aborted && String(signal.reason?.message || "").includes("timed out");
-        fail(res, timedOut ? 504 : 502, timedOut ? "The speech upstream exceeded its time limit." : "Unable to read the upstream audio response.", timedOut ? "UPSTREAM_TIMEOUT" : "INVALID_AUDIO_RESPONSE");
+        const tooLarge = error?.code === "AUDIO_RESPONSE_TOO_LARGE";
+        fail(res, tooLarge ? 502 : timedOut ? 504 : 502, tooLarge ? "Audio provider response exceeds the server size limit." : timedOut ? "The speech upstream exceeded its time limit." : "Unable to read the upstream audio response.", tooLarge ? "AUDIO_RESPONSE_TOO_LARGE" : timedOut ? "UPSTREAM_TIMEOUT" : "INVALID_AUDIO_RESPONSE");
       }
     }
   });
