@@ -13,7 +13,8 @@ import {
   fail,
   openRouterHeaders,
   extractUpstreamMessage,
-  recordUsage
+  recordUsage,
+  withUpstreamGuard
 } from "../lib/openrouter.js";
 
 const CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE}/chat/completions`;
@@ -290,38 +291,39 @@ export default async function handler(req, res) {
   withReasoning(payload, thinkingLevel);
   if (enableSearch) payload.tools = [{ type: "openrouter:web_search" }];
 
-  const controller = new AbortController();
-  const onClose = () => { if (!res.writableEnded) controller.abort(); };
-  res.on("close", onClose);
-
-  try {
-    const endpoint = modelConfig.api === "responses" ? RESPONSES_URL : CHAT_COMPLETIONS_URL;
-    const upstream = await fetch(endpoint, {
-      method: "POST",
-      signal: controller.signal,
-      headers: openRouterHeaders(req),
-      body: JSON.stringify(payload)
-    });
-
-    if (!upstream.ok) {
-      const responseText = await upstream.text();
-      const message = extractUpstreamMessage(responseText, upstream.status);
-      return fail(res, upstream.status, message, `OPENROUTER_${upstream.status}`);
-    }
-    if (!upstream.body) return fail(res, 502, "OpenRouter returned an empty response stream.", "EMPTY_UPSTREAM_STREAM");
-
-    sseHeaders(res);
-    if (modelConfig.api === "responses") await pipeResponsesAsChatStream(upstream, res, model);
-    else await pipeChatCompletionStream(upstream, res, model);
-  } catch (error) {
-    if (res.destroyed || res.writableEnded || error?.name === "AbortError") return;
-    const message = String(error?.message || "Unknown upstream error").slice(0, 400);
-    if (!res.headersSent) return fail(res, 502, `OpenRouter connection failed: ${message}`, "UPSTREAM_CONNECTION_FAILED");
+  return withUpstreamGuard(req, res, "chat", 55_000, async (signal) => {
     try {
-      await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message: "Upstream stream interrupted." } })}\n\n`);
-      res.end();
-    } catch { res.destroy(); }
-  } finally {
-    res.off("close", onClose);
-  }
+      const endpoint = modelConfig.api === "responses" ? RESPONSES_URL : CHAT_COMPLETIONS_URL;
+      const upstream = await fetch(endpoint, {
+        method: "POST",
+        signal,
+        headers: openRouterHeaders(req),
+        body: JSON.stringify(payload)
+      });
+
+      if (!upstream.ok) {
+        const responseText = await upstream.text();
+        const message = extractUpstreamMessage(responseText, upstream.status);
+        return fail(res, upstream.status, message, `OPENROUTER_${upstream.status}`);
+      }
+      if (!upstream.body) return fail(res, 502, "OpenRouter returned an empty response stream.", "EMPTY_UPSTREAM_STREAM");
+
+      sseHeaders(res);
+      if (modelConfig.api === "responses") await pipeResponsesAsChatStream(upstream, res, model);
+      else await pipeChatCompletionStream(upstream, res, model);
+    } catch (error) {
+      if (res.destroyed || res.writableEnded || error?.name === "AbortError") {
+        if (!res.destroyed && signal.aborted && String(signal.reason?.message || "").includes("timed out")) {
+          return fail(res, 504, "The chat upstream exceeded its time limit.", "UPSTREAM_TIMEOUT");
+        }
+        return;
+      }
+      const message = String(error?.message || "Unknown upstream error").slice(0, 400);
+      if (!res.headersSent) return fail(res, 502, `OpenRouter connection failed: ${message}`, "UPSTREAM_CONNECTION_FAILED");
+      try {
+        await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message: "Upstream stream interrupted." } })}\\n\\n`);
+        res.end();
+      } catch { res.destroy(); }
+    }
+  });
 }
