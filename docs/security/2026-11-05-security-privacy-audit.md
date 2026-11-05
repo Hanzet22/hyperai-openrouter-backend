@@ -194,8 +194,8 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 
 ## I. Security 0.4 implementation record — upstream reliability
 
-- Added `lib/resilience.js` with a Redis-coordinated circuit breaker scoped to the selected provider/model key.
-- Circuit behavior: CLOSED admits requests; five transient failures within 30 seconds open the circuit for 30 seconds; after cooldown, one HALF_OPEN probe is admitted using a 10-second Redis lease.
+- Added `lib/resilience.js` with a Redis-coordinated circuit breaker scoped to the selected provider/model key; stream errors discovered after response headers are recorded as failures without replaying the stream.
+- Circuit behavior: CLOSED admits requests; five transient failures within a 30-second fixed counter window open the circuit for 30 seconds; after cooldown, one HALF_OPEN probe is admitted using a 10-second Redis lease. A failed half-open probe immediately reopens the circuit.
 - Uses Redis server time and atomic Lua scripts. Model keys are SHA-256 hashed before being placed in Redis key names.
 - Failure classification counts HTTP 429/500/502/503/504 and fetch/network exceptions as transient; successful 2xx clears failure state; other 4xx are neutral.
 - Retry is deliberately narrow: at most one retry for HTTP 429, only when a valid `Retry-After` is no greater than one second. HTTP-date and delta-seconds forms are supported.
