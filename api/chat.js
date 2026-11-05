@@ -14,7 +14,8 @@ import {
   openRouterHeaders,
   extractUpstreamMessage,
   recordUsage,
-  withUpstreamGuard
+  withUpstreamGuard,
+  fetchWithResilience
 } from "../lib/openrouter.js";
 
 const CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE}/chat/completions`;
@@ -294,12 +295,12 @@ export default async function handler(req, res) {
   return withUpstreamGuard(req, res, "chat", 55_000, async (signal) => {
     try {
       const endpoint = modelConfig.api === "responses" ? RESPONSES_URL : CHAT_COMPLETIONS_URL;
-      const upstream = await fetch(endpoint, {
+      const upstream = await fetchWithResilience(endpoint, {
         method: "POST",
         signal,
         headers: openRouterHeaders(req),
         body: JSON.stringify(payload)
-      });
+      }, { key: model, retryRateLimit: true });
 
       if (!upstream.ok) {
         const responseText = await upstream.text();
@@ -317,6 +318,7 @@ export default async function handler(req, res) {
         if (signal.aborted && String(signal.reason?.message || "").includes("timed out")) {
           return fail(res, 504, "The chat upstream exceeded its time limit.", "UPSTREAM_TIMEOUT");
         }
+        if (error?.status && !res.headersSent) return fail(res, error.status, error.message, error.code || "UPSTREAM_RESILIENCE_ERROR");
         return;
       }
       const message = String(error?.message || "Unknown upstream error").slice(0, 400);
