@@ -4,7 +4,7 @@ import { preparePost, fail, forwardJson, jsonSize } from "../lib/openrouter.js";
 const MODEL = "nvidia/llama-nemotron-rerank-vl-1b-v2:free";
 
 export default async function handler(req, res) {
-  const body = preparePost(req, res);
+  const body = await preparePost(req, res, "rerank");
   if (!body) return;
   const query = typeof body.query === "string" ? body.query.trim() : "";
   const documents = body.documents;
