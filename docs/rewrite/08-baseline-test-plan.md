@@ -1,6 +1,6 @@
 # Phase 0.1 — Baseline Test Preparation
 
-**Status:** harness added; execution in the deployed Vercel environment remains unverified.  
+**Status:** baseline suite passed in GitHub Actions on Node.js 22; deployed Vercel environment remains unverified.  
 **Purpose:** capture observable behavior before the architecture rewrite.
 
 ## Test command
@@ -38,7 +38,7 @@ The suite uses Node's built-in test runner and standard web APIs. It adds no run
 | Environment | Result | Notes |
 |---|---|---|
 | GitHub source review | Complete | Tests authored against current main handlers. |
-| Local Node test execution | Pending | Must run npm test in a checkout with Node.js 18+. |
+| GitHub Actions (Node.js 22) | Passed | Run 42011524474; test job and Run baseline tests step completed successfully. |
 | Vercel deployment smoke test | Pending | Requires deployed URL and controlled test credentials. |
 
 ## Safety of this phase
