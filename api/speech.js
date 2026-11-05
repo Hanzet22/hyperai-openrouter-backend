@@ -5,7 +5,7 @@ const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
 
 export default async function handler(req, res) {
-  const body = preparePost(req, res);
+  const body = await preparePost(req, res, "speech");
   if (!body) return;
   const input = typeof body.input === "string" ? body.input.trim() : "";
   const voice = typeof body.voice === "string" ? body.voice.trim() : "";
