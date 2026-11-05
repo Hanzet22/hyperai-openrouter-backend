@@ -348,3 +348,19 @@ Karena HyperAI merupakan aplikasi web, setiap deployment yang menjalankan versi 
 ### Observability and operational monitoring
 
 Security 0.5 adds privacy-conscious structured telemetry to API request lifecycles, rate-limit and concurrency rejections, upstream circuit-breaker outcomes, and provider-reported token/cost usage. Events are emitted to Vercel Runtime Logs; prompts, responses, raw IP addresses, and secrets are excluded by an explicit field allowlist. This does not add a metrics database, dashboard, or automated alerting. See [Security 0.5 — Observability & Operational Monitoring](docs/security/0.5-observability-monitoring.md) for event definitions, operational review guidance, and limitations.
+
+
+### Deployment readiness verification (Security 0.6)
+
+The non-billing deployment verifier checks the homepage security headers, OPTIONS preflight for all six API routes, request IDs, and an authenticated Upstash Redis REST PING. It does not submit AI prompts or trigger model generation.
+
+Run it from a trusted shell with secrets supplied through environment variables:
+
+```sh
+HYPERAI_BASE_URL="https://your-production-domain" \
+UPSTASH_REDIS_REST_URL="https://your-database.upstash.io" \
+UPSTASH_REDIS_REST_TOKEN="your-token" \
+npm run verify:deployment
+```
+
+See [Security 0.6 — Deployment Readiness](docs/security/0.6-deployment-readiness.md) for Production/Preview setup and completion criteria. Never commit or paste Redis credentials into source control, issues, logs, or chat.
