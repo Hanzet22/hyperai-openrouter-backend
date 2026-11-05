@@ -109,9 +109,9 @@ test("chat streaming records provider usage without logging prompt or response t
     console.info = (message) => { usageLog = String(message); };
     try {
       await withFetch(async () => new Response(
-        'data: {"choices":[{"index":0,"delta":{"content":"private generated text"}}]}\\n\\n' +
-        'data: {"id":"gen-usage-test","model":"' + CHAT_MODEL + '","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18,"cost":0.001}}\\n\\n' +
-        'data: [DONE]\\n\\n',
+        'data: {"choices":[{"index":0,"delta":{"content":"private generated text"}}]}\n\n' +
+        'data: {"id":"gen-usage-test","model":"' + CHAT_MODEL + '","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18,"cost":0.001}}\n\n' +
+        'data: [DONE]\n\n',
         { status: 200, headers: { "content-type": "text/event-stream" } }
       ), async () => {
         const res = new MockResponse();
