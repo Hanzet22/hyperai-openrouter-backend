@@ -7,7 +7,7 @@ HyperAI adalah web client AI bergaya cyberpunk yang mengakses model melalui **Op
 > **Status:** Active Development — fitur, model yang tersedia, dan konfigurasi provider dapat berubah.
 
 [![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-black?style=flat&logo=vercel)](https://vercel.com/new)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
 [![Powered by OpenRouter](https://img.shields.io/badge/AI%20Gateway-OpenRouter-6c5ce7?style=flat)](https://openrouter.ai/)
 
 ---
@@ -287,7 +287,9 @@ Untuk keselamatan dan privasi, hindari memublikasikan nomor telepon pribadi, nom
 
 ## 📜 Lisensi
 
-Kode project ini dinyatakan menggunakan **MIT License**. Lihat file [`LICENSE`](LICENSE). Lisensi project tidak otomatis mencakup merek dagang, layanan, model AI, atau asset pihak ketiga; ketentuan masing-masing tetap berlaku.
+Kode HyperAI dilisensikan di bawah **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**. Lihat file [`LICENSE`](LICENSE) untuk teks lisensi lengkap. SPDX-License-Identifier: `AGPL-3.0-or-later`. Lisensi kode project tidak otomatis mencakup merek dagang, layanan, model AI, atau asset pihak ketiga; ketentuan masing-masing tetap berlaku.
+
+Karena HyperAI merupakan aplikasi web, setiap deployment yang menjalankan versi modifikasi harus menyediakan cara yang jelas dan mudah ditemukan bagi pengguna jaringan untuk memperoleh Corresponding Source sesuai Section 13 AGPLv3. Tautan sumber pada antarmuka deployment perlu diarahkan ke source code versi yang benar-benar dijalankan.
 
 ---
 
