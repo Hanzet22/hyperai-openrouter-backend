@@ -119,6 +119,23 @@ test("speech returns non-empty audio bytes and no-store headers", async () => {
   });
 });
 
+test("speech rejects an upstream audio response above the 8 MiB ceiling", async () => {
+  await withEnvironment({ OPENROUTER_API_KEY: "test-key" }, async () => {
+    await withFetch(async () => new Response(new Uint8Array([1, 2]), {
+      status: 200,
+      headers: {
+        "content-type": "audio/mpeg",
+        "content-length": String(8 * 1024 * 1024 + 1)
+      }
+    }), async () => {
+      const res = new MockResponse();
+      await speech(makeRequest({ body: { input: "hello", voice: "test-voice" } }), res);
+      assert.equal(res.statusCode, 502);
+      assert.equal(res.json().error.code, "AUDIO_RESPONSE_TOO_LARGE");
+    });
+  });
+});
+
 test("configured origin policy rejects an unlisted browser origin", async () => {
   await withEnvironment({ OPENROUTER_API_KEY: "test-key", ALLOWED_ORIGIN: "https://allowed.example" }, async () => {
     const res = new MockResponse();
