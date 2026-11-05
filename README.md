@@ -388,3 +388,10 @@ npm run verify:redis
 ```
 
 The command does not send AI prompts, call OpenRouter, change application keys, or run a load test. See [Security 0.8 — Runtime Verification & Redis Operational Hardening](docs/security/0.8-runtime-verification.md) for verified behavior and remaining deployment limitations.
+
+
+### Security 1.0 — Release Candidate validation
+
+Security 1.0 adds a dependency-free release-gate suite covering the six API handlers, shared request boundary, fixed upstream destinations, Redis rate-limit/concurrency/circuit-breaker controls, route payload limits, security headers, deployment verifier inventory, and pinned CI actions.
+
+See [Security 1.0 — Release Candidate Validation](docs/security/1.0-release-candidate.md) for evidence, external TLS observations, residual risks, and the distinction between source validation and production readiness. The Vercel project remains paused; this phase does not deploy or activate the service.
