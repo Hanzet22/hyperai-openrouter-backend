@@ -185,9 +185,9 @@ async function pipeChatCompletionStream(upstream, res, model) {
     if (res.destroyed) break;
     buffer += decoder.decode(chunk, { stream: true });
     let separator;
-    while ((separator = buffer.search(/\\r?\\n\\r?\\n/)) !== -1) {
+    while ((separator = buffer.search(/\r?\n\r?\n/)) !== -1) {
       const block = buffer.slice(0, separator);
-      const match = buffer.slice(separator).match(/^\\r?\\n\\r?\\n/);
+      const match = buffer.slice(separator).match(/^\r?\n\r?\n/);
       buffer = buffer.slice(separator + (match ? match[0].length : 2));
       inspectBlock(block);
     }
