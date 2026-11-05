@@ -344,3 +344,7 @@ Karena HyperAI merupakan aplikasi web, setiap deployment yang menjalankan versi 
 **Push the Limitation. Push the Creativity. Make The New Era.** ⚡
 
 </div>
+
+### Observability and operational monitoring
+
+Security 0.5 adds privacy-conscious structured telemetry to API request lifecycles, rate-limit and concurrency rejections, upstream circuit-breaker outcomes, and provider-reported token/cost usage. Events are emitted to Vercel Runtime Logs; prompts, responses, raw IP addresses, and secrets are excluded by an explicit field allowlist. This does not add a metrics database, dashboard, or automated alerting. See [Security 0.5 — Observability & Operational Monitoring](docs/security/0.5-observability-monitoring.md) for event definitions, operational review guidance, and limitations.
