@@ -120,6 +120,12 @@ The frontend remains anonymous/public; no user-account authentication or per-use
 
 This is **abuse throttling, not authentication**. It does not identify people, create per-user quotas, or guarantee a daily provider-spend cap. IP limits may affect multiple people behind the same school/mobile/office NAT. Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel before expecting production API routes to work. See the [Security 0.1 rate-limit setup guide](docs/security/0.1-rate-limit-setup.md).
 
+### Cost protection
+
+Security 0.2 adds a shared 256 KiB JSON request ceiling, server-enforced output caps (2,048 tokens for chat and 256 for moderation), and an emergency server-side kill switch. Set `HYPERAI_AI_ENABLED=false` in the Vercel environment and redeploy to block all AI API requests. Usage telemetry records model, route, generation ID, token counts, and provider-reported cost when returned; it deliberately does not log prompts or response text.
+
+Application limits are defense in depth, not a substitute for a provider-side spend ceiling. Use a dedicated OpenRouter API key for HyperAI and configure a per-key credit limit in the OpenRouter dashboard. If the workspace supports budget controls, configure a workspace or guardrail budget too. Choose a cap appropriate to the project owner; do not assume that a model marked `:free` or disabled Web Search guarantees zero charges. See the [Security 0.2 cost-protection guide](docs/security/0.2-cost-protection.md) and the [OpenRouter spend controls](https://openrouter.ai/docs/guides/best-practices/spend-controls).
+
 ### Security review record
 
 See the [Security, Privacy, and Compliance Audit](docs/security/2026-11-05-security-privacy-audit.md) for the reviewed risks, limitations, and outstanding work. The report is a source/configuration review, not a penetration test or legal compliance certification.
