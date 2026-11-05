@@ -93,6 +93,7 @@ test("decisions, embeddings, moderation, and rerank preserve successful JSON res
         requestedUrl = String(url);
         assert.equal(options.method, "POST", item.name);
         assert.equal(options.headers.Authorization, "Bearer test-key", item.name);
+        if (item.name === "moderation") assert.equal(JSON.parse(options.body).max_tokens, 256);
         return jsonResponse(expected);
       }, async () => {
         const res = new MockResponse();
