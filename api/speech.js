@@ -1,5 +1,5 @@
 /** Free text-to-speech helper. POST /api/speech; returns raw audio bytes. */
-import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, withUpstreamGuard, fetchWithResilience } from "../lib/openrouter.js";
+import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, withUpstreamGuard, fetchWithResilience, recordResilienceOutcome } from "../lib/openrouter.js";
 
 const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
@@ -37,12 +37,16 @@ export default async function handler(req, res) {
     }
     const contentType = upstream.headers.get("content-type") || "";
     if (!contentType.startsWith("audio/")) {
+      await recordResilienceOutcome(MODEL, "failure");
       const text = await upstream.text();
       return fail(res, 502, extractUpstreamMessage(text, 502), "INVALID_AUDIO_RESPONSE");
     }
     try {
       const audio = Buffer.from(await upstream.arrayBuffer());
-      if (!audio.length) return fail(res, 502, "Audio provider mengembalikan file kosong.", "EMPTY_AUDIO_RESPONSE");
+      if (!audio.length) {
+        await recordResilienceOutcome(MODEL, "failure");
+        return fail(res, 502, "Audio provider mengembalikan file kosong.", "EMPTY_AUDIO_RESPONSE");
+      }
       res.statusCode = 200;
       res.setHeader("Content-Type", contentType);
       res.setHeader("Content-Length", String(audio.length));
@@ -52,6 +56,7 @@ export default async function handler(req, res) {
       if (generationId) res.setHeader("X-Generation-Id", generationId);
       res.end(audio);
     } catch {
+      await recordResilienceOutcome(MODEL, "failure");
       if (!res.destroyed && !res.writableEnded) {
         const timedOut = signal.aborted && String(signal.reason?.message || "").includes("timed out");
         fail(res, timedOut ? 504 : 502, timedOut ? "The speech upstream exceeded its time limit." : "Unable to read the upstream audio response.", timedOut ? "UPSTREAM_TIMEOUT" : "INVALID_AUDIO_RESPONSE");
