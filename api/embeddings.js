@@ -20,5 +20,5 @@ export default async function handler(req, res) {
   if (jsonSize(inputs) > 60_000) return fail(res, 413, "Total input embedding terlalu besar (maks. 60 KB).", "INPUT_TOO_LARGE");
   const payload = { model, input: typeof input === "string" ? input : inputs };
   if (typeof body.input_type === "string" && body.input_type.length <= 32) payload.input_type = body.input_type;
-  return forwardJson(req, res, "/embeddings", payload);
+  return forwardJson(req, res, "/embeddings", payload, "embeddings");
 }
