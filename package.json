@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "test": "node --check scripts/verify-deployment.mjs && node --test",
-    "verify:deployment": "node scripts/verify-deployment.mjs"
+    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "verify:redis": "node scripts/verify-redis-runtime.mjs"
   }
 }
