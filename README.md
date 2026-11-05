@@ -132,6 +132,10 @@ Security 0.3 adds a shared Redis-backed concurrency guard around upstream AI wor
 
 Upstream deadlines are bounded below the configured Vercel function duration: chat 55 seconds, speech 50 seconds, and JSON endpoints 25 seconds. Client disconnects and request-abort events cancel the upstream fetch/stream where supported. Redis failures fail closed with HTTP 503. This is distributed backpressure, not a guarantee against all platform-level resource exhaustion or a substitute for authentication. See the [Security 0.3 concurrency and resource-protection guide](docs/security/0.3-concurrency-resource-protection.md).
 
+### Upstream reliability and failure resilience
+
+Security 0.4 adds a Redis-coordinated circuit breaker scoped to the selected model, with a 30-second cooldown and a single half-open recovery probe. Five transient failures in a 30-second window open that model's circuit; unrelated models remain independently available. JSON endpoints and chat may retry one HTTP 429 only when the provider supplies a valid `Retry-After` of at most one second. Arbitrary POST retries on network errors and 5xx responses are intentionally disabled to avoid duplicate generations and charges. Chat is never replayed after SSE output begins; speech uses circuit protection without automatic retry. The control uses the existing Upstash variables and fails closed in Production/Preview if Redis is unavailable. See the [Security 0.4 upstream reliability guide](docs/security/0.4-upstream-reliability.md).
+
 ### Security review record
 
 See the [Security, Privacy, and Compliance Audit](docs/security/2026-11-05-security-privacy-audit.md) for the reviewed risks, limitations, and outstanding work. The report is a source/configuration review, not a penetration test or legal compliance certification.
