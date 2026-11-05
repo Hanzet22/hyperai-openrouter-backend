@@ -100,3 +100,33 @@ test("chat aborts its upstream request when the client disconnects", async () =>
     });
   });
 });
+
+
+test("chat streaming records provider usage without logging prompt or response text", async () => {
+  await withEnvironment({ OPENROUTER_API_KEY: "test-key" }, async () => {
+    const originalInfo = console.info;
+    let usageLog = "";
+    console.info = (message) => { usageLog = String(message); };
+    try {
+      await withFetch(async () => new Response(
+        'data: {"choices":[{"index":0,"delta":{"content":"private generated text"}}]}\\n\\n' +
+        'data: {"id":"gen-usage-test","model":"' + CHAT_MODEL + '","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":11,"completion_tokens":7,"total_tokens":18,"cost":0.001}}\\n\\n' +
+        'data: [DONE]\\n\\n',
+        { status: 200, headers: { "content-type": "text/event-stream" } }
+      ), async () => {
+        const res = new MockResponse();
+        await chat(makeRequest({ body: { model: CHAT_MODEL, messages: [{ role: "user", content: "private prompt text" }] } }), res);
+        assert.equal(res.statusCode, 200);
+      });
+    } finally {
+      console.info = originalInfo;
+    }
+    const event = JSON.parse(usageLog);
+    assert.equal(event.event, "hyperai.openrouter.usage");
+    assert.equal(event.route, "chat");
+    assert.equal(event.generation_id, "gen-usage-test");
+    assert.equal(event.total_tokens, 18);
+    assert.equal(event.reported_cost, 0.001);
+    assert.doesNotMatch(usageLog, /private prompt text|private generated text/);
+  });
+});
