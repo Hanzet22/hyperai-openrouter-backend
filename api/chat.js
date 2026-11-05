@@ -12,7 +12,8 @@ import {
   sendJson,
   fail,
   openRouterHeaders,
-  extractUpstreamMessage
+  extractUpstreamMessage,
+  recordUsage
 } from "../lib/openrouter.js";
 
 const CHAT_COMPLETIONS_URL = `${OPENROUTER_BASE}/chat/completions`;
@@ -20,6 +21,7 @@ const RESPONSES_URL = `${OPENROUTER_BASE}/responses`;
 const MAX_MESSAGES = 80;
 const MAX_MESSAGE_CHARS = 30_000;
 const MAX_TOTAL_CHARS = 120_000;
+const MAX_CHAT_OUTPUT_TOKENS = 2048;
 const THINKING_LEVELS = new Set(["off", "low", "medium", "high", "ultra"]);
 
 // Keep in sync with the active model picker in index.html.
@@ -164,12 +166,35 @@ function emitChatDelta(res, text) {
   return writeWithBackpressure(res, `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: text } }] })}\n\n`);
 }
 
-async function pipeChatCompletionStream(upstream, res) {
+async function pipeChatCompletionStream(upstream, res, model) {
   const stream = Readable.fromWeb(upstream.body);
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let usageLogged = false;
+
+  const inspectBlock = (block) => {
+    if (usageLogged) return;
+    const event = extractResponseEvent(block);
+    if (event?.usage) {
+      recordUsage("chat", event.model || model, event.usage, event.id);
+      usageLogged = true;
+    }
+  };
+
   for await (const chunk of stream) {
     if (res.destroyed) break;
+    buffer += decoder.decode(chunk, { stream: true });
+    let separator;
+    while ((separator = buffer.search(/\\r?\\n\\r?\\n/)) !== -1) {
+      const block = buffer.slice(0, separator);
+      const match = buffer.slice(separator).match(/^\\r?\\n\\r?\\n/);
+      buffer = buffer.slice(separator + (match ? match[0].length : 2));
+      inspectBlock(block);
+    }
     await writeWithBackpressure(res, chunk);
   }
+  buffer += decoder.decode();
+  if (buffer.trim()) inspectBlock(buffer);
   if (!res.destroyed && !res.writableEnded) res.end();
 }
 
@@ -182,7 +207,7 @@ function extractResponseEvent(block) {
   catch { return null; }
 }
 
-async function pipeResponsesAsChatStream(upstream, res) {
+async function pipeResponsesAsChatStream(upstream, res, model) {
   const stream = Readable.fromWeb(upstream.body);
   const decoder = new TextDecoder();
   let buffer = "";
@@ -191,6 +216,10 @@ async function pipeResponsesAsChatStream(upstream, res) {
   const processBlock = async (block) => {
     const event = extractResponseEvent(block);
     if (!event) return;
+    if ((event.type === "response.completed" || event.type === "response.done") && event.response?.usage) {
+      recordUsage("chat", event.response.model || model, event.response.usage, event.response.id);
+      return;
+    }
     if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
       await emitChatDelta(res, event.delta);
       return;
@@ -256,8 +285,8 @@ export default async function handler(req, res) {
 
   const upstreamMessages = [{ role: "system", content: SYSTEM_INSTRUCTION }, ...checked.value];
   const payload = modelConfig.api === "responses"
-    ? { model, input: upstreamMessages, stream: true }
-    : { model, messages: upstreamMessages, stream: true };
+    ? { model, input: upstreamMessages, stream: true, max_output_tokens: MAX_CHAT_OUTPUT_TOKENS }
+    : { model, messages: upstreamMessages, stream: true, max_tokens: MAX_CHAT_OUTPUT_TOKENS };
   withReasoning(payload, thinkingLevel);
   if (enableSearch) payload.tools = [{ type: "openrouter:web_search" }];
 
@@ -282,8 +311,8 @@ export default async function handler(req, res) {
     if (!upstream.body) return fail(res, 502, "OpenRouter returned an empty response stream.", "EMPTY_UPSTREAM_STREAM");
 
     sseHeaders(res);
-    if (modelConfig.api === "responses") await pipeResponsesAsChatStream(upstream, res);
-    else await pipeChatCompletionStream(upstream, res);
+    if (modelConfig.api === "responses") await pipeResponsesAsChatStream(upstream, res, model);
+    else await pipeChatCompletionStream(upstream, res, model);
   } catch (error) {
     if (res.destroyed || res.writableEnded || error?.name === "AbortError") return;
     const message = String(error?.message || "Unknown upstream error").slice(0, 400);
