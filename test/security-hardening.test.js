@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { Script } from "node:vm";
+import { extractUpstreamMessage } from "../lib/openrouter.js";
 
 const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 
@@ -50,4 +52,22 @@ test("API route upstream targets are not selected from request fields", async ()
     const source = await readFile(new URL(`../api/${name}.js`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /body\.(?:url|targetUrl|upstreamUrl)\b/);
   }
+});
+
+test("inline browser JavaScript parses without syntax errors", () => {
+  const blocks = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
+    .filter((match) => !/\\bsrc\\s*=/.test(match[1]) && match[2].trim());
+  assert.ok(blocks.length > 0, "expected at least one inline script");
+  for (const [index, match] of blocks.entries()) {
+    new Script(match[2], { filename: `public/index.html:inline-${index + 1}` });
+  }
+});
+
+test("upstream error bodies are not reflected to API clients", () => {
+  const secretLikePayload = JSON.stringify({
+    error: { message: "provider internal trace with Authorization: Bearer example-secret-token" }
+  });
+  const message = extractUpstreamMessage(secretLikePayload, 429);
+  assert.equal(message, "OpenRouter request failed (HTTP 429).");
+  assert.doesNotMatch(message, /internal trace|Authorization|example-secret-token/);
 });
