@@ -190,3 +190,19 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 - Setup and limitations: [Security 0.3 concurrency and resource protection](0.3-concurrency-resource-protection.md).
 - **Activation remains pending:** the previously inspected Vercel Production/Preview environment did not contain the two Upstash variables. Configure them, redeploy, then verify runtime behavior before treating this control as active.
 - Residual risks: global slots are not per-user fair; lease expiry is a crash-recovery fallback; no production load test or real upstream timeout test has been run. Monitor Upstash operation usage because each accepted upstream request adds acquire/release operations in addition to the existing rate-limit call.
+
+
+## I. Security 0.4 implementation record — upstream reliability
+
+- Added `lib/resilience.js` with a Redis-coordinated circuit breaker scoped to the selected provider/model key.
+- Circuit behavior: CLOSED admits requests; five transient failures within 30 seconds open the circuit for 30 seconds; after cooldown, one HALF_OPEN probe is admitted using a 10-second Redis lease.
+- Uses Redis server time and atomic Lua scripts. Model keys are SHA-256 hashed before being placed in Redis key names.
+- Failure classification counts HTTP 429/500/502/503/504 and fetch/network exceptions as transient; successful 2xx clears failure state; other 4xx are neutral.
+- Retry is deliberately narrow: at most one retry for HTTP 429, only when a valid `Retry-After` is no greater than one second. HTTP-date and delta-seconds forms are supported.
+- No automatic replay for network exceptions or 5xx POST responses because upstream processing may already have occurred and replay could duplicate generation work or cost.
+- Chat permits a bounded 429 retry only before SSE output begins. No retry occurs after stream output starts. Speech has circuit protection but no automatic retry.
+- Reuses `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`; Production/Preview fail closed when Redis coordination is unavailable.
+- Added `test/resilience.test.js` for open-circuit rejection, missing Redis configuration, Retry-After parsing, bounded 429 retry, no retry for 5xx or invalid Retry-After, and local-development bypass.
+- Documentation: [Security 0.4 upstream reliability](0.4-upstream-reliability.md).
+- **Activation remains pending:** Security 0.1/0.3 already require the same Upstash variables, which were absent in the previously inspected Vercel Production/Preview metadata. Configure both variables, redeploy, and verify runtime behavior before treating the guards as active.
+- No production fault-injection, provider outage, load, or paid-generation test was performed. Use mocked tests or bounded owner-authorized staging verification.
