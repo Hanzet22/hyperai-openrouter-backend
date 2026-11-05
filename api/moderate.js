@@ -4,7 +4,7 @@ import { preparePost, fail, forwardJson } from "../lib/openrouter.js";
 const MODEL = "nvidia/nemotron-3.5-content-safety:free";
 
 export default async function handler(req, res) {
-  const body = preparePost(req, res);
+  const body = await preparePost(req, res, "moderate");
   if (!body) return;
   const text = typeof body.text === "string" ? body.text.trim() : "";
   if (!text) return fail(res, 400, "text wajib diisi.", "TEXT_REQUIRED");
