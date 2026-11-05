@@ -7,7 +7,7 @@ const MODELS = new Set([
 ]);
 
 export default async function handler(req, res) {
-  const body = preparePost(req, res);
+  const body = await preparePost(req, res, "decisions");
   if (!body) return;
   const model = typeof body.model === "string" ? body.model.trim() : "";
   if (!MODELS.has(model)) return fail(res, 400, "Model decisions tidak diaktifkan. Gunakan inception/mercury-decide:free atau respan/span-01-lite:free.", "MODEL_NOT_ALLOWLISTED");
