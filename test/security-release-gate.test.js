@@ -113,7 +113,7 @@ test("release gate retains dependency-free and SHA-pinned CI baseline", async ()
   assert.deepEqual(Object.keys(manifest.dependencies || {}), []);
   assert.deepEqual(Object.keys(manifest.devDependencies || {}), []);
   const workflow = await read("../.github/workflows/baseline-tests.yml");
-  const refs = workflow.split("\n").filter((line) => line.includes("uses:")).map((line) => line.trim().split("uses:")[1].trim());
+  const refs = workflow.split("\n").filter((line) => line.includes("uses:")).map((line) => line.trim().split("uses:")[1].split("#")[0].trim());
   assert.ok(refs.length >= 2);
   for (const ref of refs) {
     const at = ref.lastIndexOf("@");
