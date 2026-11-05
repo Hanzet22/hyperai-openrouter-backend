@@ -33,5 +33,5 @@ export default async function handler(req, res) {
   }
   const payload = { model, state: body.state, questions: body.questions };
   if (jsonSize(payload) > 90_000) return fail(res, 413, "Payload decisions terlalu besar (maks. 90 KB).", "PAYLOAD_TOO_LARGE");
-  return forwardJson(req, res, "https://openrouter.ai/api/alpha/decisions", payload);
+  return forwardJson(req, res, "https://openrouter.ai/api/alpha/decisions", payload, "decisions");
 }
