@@ -700,27 +700,144 @@
         event.preventDefault(); sendMessage();
       }
     });
-    function escapeHTML(value) {
-      return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    function appendInline(parent, value) {
+      const source = String(value);
+      const pattern = /(\x60[^\x60\n]+\x60|\*\*[^*]+\*\*|\*[^*]+\*|https?:\/\/[^\s<]+)/g;
+      let cursor = 0;
+      let match;
+      while ((match = pattern.exec(source))) {
+        if (match.index > cursor) parent.appendChild(document.createTextNode(source.slice(cursor, match.index)));
+        const token = match[0];
+        if (token.startsWith("\x60") && token.endsWith("\x60")) {
+          const code = document.createElement("code");
+          code.textContent = token.slice(1, -1);
+          parent.appendChild(code);
+        } else if (token.startsWith("**") && token.endsWith("**")) {
+          const strong = document.createElement("strong");
+          strong.textContent = token.slice(2, -2);
+          parent.appendChild(strong);
+        } else if (token.startsWith("*") && token.endsWith("*")) {
+          const emphasis = document.createElement("em");
+          emphasis.textContent = token.slice(1, -1);
+          parent.appendChild(emphasis);
+        } else {
+          const cleaned = token.replace(/[),.!?]+$/, "");
+          let parsedUrl;
+          try { parsedUrl = new URL(cleaned); } catch { parsedUrl = null; }
+          if (parsedUrl && (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") && !parsedUrl.username && !parsedUrl.password) {
+            const anchor = document.createElement("a");
+            anchor.href = parsedUrl.href;
+            anchor.target = "_blank";
+            anchor.rel = "noopener noreferrer";
+            anchor.textContent = cleaned;
+            parent.appendChild(anchor);
+          } else {
+            parent.appendChild(document.createTextNode(cleaned));
+          }
+          if (token.length > cleaned.length) parent.appendChild(document.createTextNode(token.slice(cleaned.length)));
+        }
+        cursor = pattern.lastIndex;
+      }
+      if (cursor < source.length) parent.appendChild(document.createTextNode(source.slice(cursor)));
     }
     function renderMarkdown(text) {
-      let safe = escapeHTML(text);
-      const blocks = [];
-      safe = safe.replace(/```([^\n]*)\n?([\s\S]*?)```/g, (_, language, body) => `@@CODE_${blocks.push({ language: language.trim(), body }) - 1}@@`);
-      safe = safe.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-      safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-      safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-      safe = safe.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
-        const cleaned = url.replace(/[),.!?]+$/, "");
-        return `<a href="${cleaned}" target="_blank" rel="noopener noreferrer">${cleaned}</a>${url.slice(cleaned.length)}`;
-      });
-      safe = safe.replace(/(^|\n)[ \t]*[-*] (.+)/g, "$1• $2");
-      safe = `<p>${safe.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
-      blocks.forEach((block, index) => {
-        const lang = block.language ? ` data-language="${escapeHTML(block.language)}"` : "";
-        safe = safe.replace(`@@CODE_${index}@@`, `<pre${lang}><code>${block.body}</code></pre>`);
-      });
-      return safe;
+      const fragment = document.createDocumentFragment();
+      const lines = String(text).split(/\r?\n/);
+      let paragraph = null;
+      let list = null;
+      let codeLines = null;
+      let codeLanguage = "";
+      const flushParagraph = () => {
+        paragraph = null;
+      };
+      const flushList = () => {
+        list = null;
+      };
+      const appendParagraphLine = (line) => {
+        if (!paragraph) {
+          paragraph = document.createElement("p");
+          fragment.appendChild(paragraph);
+        } else {
+          paragraph.appendChild(document.createElement("br"));
+        }
+        appendInline(paragraph, line);
+      };
+      for (const line of lines) {
+        if (codeLines !== null) {
+          if (line.startsWith("\x60\x60\x60")) {
+            const pre = document.createElement("pre");
+            if (codeLanguage) pre.setAttribute("data-language", codeLanguage);
+            const code = document.createElement("code");
+            code.textContent = codeLines.join("\n");
+            pre.appendChild(code);
+            fragment.appendChild(pre);
+            codeLines = null;
+            codeLanguage = "";
+          } else {
+            codeLines.push(line);
+          }
+          continue;
+        }
+        if (line.startsWith("\x60\x60\x60")) {
+          flushParagraph();
+          flushList();
+          codeLanguage = line.slice(3).trim().slice(0, 40);
+          codeLines = [];
+          continue;
+        }
+        if (!line.trim()) {
+          flushParagraph();
+          flushList();
+          continue;
+        }
+        const item = line.match(/^\s*[-*]\s+(.+)$/);
+        if (item) {
+          flushParagraph();
+          if (!list) {
+            list = document.createElement("ul");
+            fragment.appendChild(list);
+          }
+          const li = document.createElement("li");
+          appendInline(li, item[1]);
+          list.appendChild(li);
+          continue;
+        }
+        flushList();
+        appendParagraphLine(line);
+      }
+      if (codeLines !== null) {
+        const pre = document.createElement("pre");
+        if (codeLanguage) pre.setAttribute("data-language", codeLanguage);
+        const code = document.createElement("code");
+        code.textContent = codeLines.join("\n");
+        pre.appendChild(code);
+        fragment.appendChild(pre);
+      }
+      return fragment;
+    }
+    function createTypingIndicator() {
+      const indicator = document.createElement("span");
+      indicator.className = "typing";
+      indicator.setAttribute("aria-label", "HyperAI sedang mengetik");
+      for (let index = 0; index < 3; index += 1) indicator.appendChild(document.createElement("i"));
+      return indicator;
+    }
+    function showAbortMessage(target, hasText) {
+      const paragraph = document.createElement("p");
+      const emphasis = document.createElement("em");
+      emphasis.textContent = hasText
+        ? "Respons dihentikan. Teks yang sudah diterima belum disimpan ke riwayat model."
+        : "Percakapan dihentikan.";
+      paragraph.appendChild(emphasis);
+      target.replaceChildren(paragraph);
+    }
+    function showErrorMessage(target, message) {
+      const paragraph = document.createElement("p");
+      paragraph.style.color = "var(--danger)";
+      const strong = document.createElement("strong");
+      strong.textContent = "Gagal:";
+      paragraph.append(strong, document.createTextNode(" " + String(message || "Terjadi kesalahan yang tidak diketahui.")));
+      target.replaceChildren(paragraph);
     }
     function createMessage(role, content = "") {
       if (welcome && welcome.isConnected) welcome.style.display = "none";
@@ -729,7 +846,7 @@
       const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = role === "user" ? "YOU" : "AI"; avatar.setAttribute("aria-hidden", "true");
       const wrap = document.createElement("div"); wrap.className = "bubble-wrap";
       const meta = document.createElement("div"); meta.className = "meta"; meta.textContent = role === "user" ? "USER" : "HYPERAI";
-      const bubble = document.createElement("div"); bubble.className = "bubble"; if (content) bubble.innerHTML = renderMarkdown(content);
+      const bubble = document.createElement("div"); bubble.className = "bubble"; if (content) bubble.appendChild(renderMarkdown(content));
       wrap.append(meta, bubble); article.append(avatar, wrap); chat.appendChild(article); chat.scrollTop = chat.scrollHeight;
       return { article, bubble };
     }
@@ -749,7 +866,7 @@
           const data = await response.json();
           return data?.error?.message || data?.error || data?.message || `HTTP ${response.status}`;
         }
-        return (await response.text()).trim().slice(0, 500) || `HTTP ${response.status}`;
+        return `HTTP ${response.status}`;
       } catch { return `HTTP ${response.status}`; }
     }
     function handleSSELine(line, appendDelta) {
@@ -780,7 +897,7 @@
       const assistantMessage = createMessage("assistant");
       const aiBubble = assistantMessage.bubble;
       lastAssistantArticle = assistantMessage.article;
-      aiBubble.innerHTML = '<span class="typing" aria-label="HyperAI sedang mengetik"><i></i><i></i><i></i></span>';
+      aiBubble.replaceChildren(createTypingIndicator());
       closePickers();
       setGenerating(true); activeController = new AbortController();
       let fullText = "";
@@ -795,7 +912,7 @@
         if (!response.body) throw new Error("Browser tidak menerima stream dari server.");
         const reader = response.body.getReader(); const decoder = new TextDecoder();
         let buffer = "", doneSignal = false;
-        const appendDelta = (delta) => { fullText += delta; aiBubble.innerHTML = renderMarkdown(fullText); chat.scrollTop = chat.scrollHeight; };
+        const appendDelta = (delta) => { fullText += delta; aiBubble.replaceChildren(renderMarkdown(fullText)); chat.scrollTop = chat.scrollHeight; };
         while (!doneSignal) {
           const result = await reader.read();
           if (result.done) break;
@@ -813,9 +930,9 @@
         messages.push({ role: "assistant", content: fullText }); lastAssistantText = fullText; updateStatus("Siap", "");
       } catch (error) {
         if (error?.name === "AbortError") {
-          aiBubble.innerHTML = `<p><em>${fullText ? "Respons dihentikan. Teks yang sudah diterima belum disimpan ke riwayat model." : "Percakapan dihentikan."}</em></p>`;
+          showAbortMessage(aiBubble, Boolean(fullText));
         } else {
-          aiBubble.innerHTML = `<p style="color:var(--danger)"><strong>Gagal:</strong> ${escapeHTML(error?.message || "Terjadi kesalahan yang tidak diketahui.")}</p>`;
+          showErrorMessage(aiBubble, error?.message);
           requestHadError = true;
           showToast("Gagal memuat respons. Cek model/backend lalu coba lagi."); updateStatus("Error", "error");
         }
