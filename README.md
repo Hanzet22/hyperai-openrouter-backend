@@ -114,9 +114,11 @@ Hasil pencarian juga dapat tidak tersedia, tidak lengkap, atau berubah. Pengguna
 
 Baseline response headers are configured in `vercel.json`: MIME sniffing protection, clickjacking protection, a strict referrer policy, HSTS, and a restrictive Permissions Policy. They must still be verified against the deployed site and API responses after deployment. A Content Security Policy is intentionally not enabled yet because the current frontend contains inline JavaScript and CSS; add one after a compatibility-tested migration.
 
-### Public API access
+### Public API access and rate limiting
 
-The current API routes do not implement user authentication, per-user authorization, or rate limiting. Treat the deployment as a publicly callable service and do not expose it to broad public traffic until abuse controls and usage quotas are implemented. The model allowlist and CORS policy are not substitutes for authentication or rate limiting.
+The frontend remains anonymous/public; no user-account authentication or per-user identity is implemented. All six POST API routes now use a shared Upstash Redis limiter: per-route IP limits plus a global ceiling, applied atomically in a 60-second window. Production requests fail closed with HTTP 503 if Upstash or Vercel's trusted client-IP header is unavailable, and return HTTP 429 with `Retry-After` when a limit is reached.
+
+This is **abuse throttling, not authentication**. It does not identify people, create per-user quotas, or guarantee a daily provider-spend cap. IP limits may affect multiple people behind the same school/mobile/office NAT. Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel before expecting production API routes to work. See the [Security 0.1 rate-limit setup guide](docs/security/0.1-rate-limit-setup.md).
 
 ### Security review record
 
@@ -137,7 +139,7 @@ Backend sebaiknya hanya menerima model yang diizinkan allowlist di `api/chat.js`
 - Jangan gunakan HyperAI untuk uji DDoS, spam request, atau membebani layanan.
 - Jangan mengirim secret, kata sandi, atau informasi pribadi yang tidak perlu ke model AI.
 - Jangan menganggap output AI selalu akurat; verifikasi informasi penting dari sumber tepercaya.
-- Terapkan autentikasi dan rate limiting sebelum memberi akses publik berskala besar.
+- Pertahankan rate limiting aktif dan tinjau kuota setelah mengamati traffic nyata; rate limiting IP bukan autentikasi atau jaminan batas biaya harian.
 - Pantau penggunaan, error, serta limit dari Vercel dan OpenRouter.
 
 ## ⚙️ Konfigurasi Environment Variables
@@ -151,6 +153,8 @@ Atur variable berikut melalui **Vercel Dashboard → Project → Settings → En
 | `PUBLIC_APP_URL` | Tidak | URL publik aplikasi yang dapat dipakai sebagai metadata request. Gunakan URL deployment yang benar. |
 | `ALLOWED_ORIGIN` | Tidak | Origin frontend yang diizinkan oleh kebijakan CORS. Contoh: `https://hyperai.example.com`. |
 | `ENABLE_OPENROUTER_WEB_SEARCH` | Tidak | Aktifkan tool Web Search hanya dengan nilai `true`; default sebaiknya tetap nonaktif. |
+| `UPSTASH_REDIS_REST_URL` | **Ya, production** | REST URL database Upstash Redis untuk rate limiting bersama. |
+| `UPSTASH_REDIS_REST_TOKEN` | **Ya, production** | Secret REST token Upstash; hanya digunakan server-side. |
 
 Contoh `.env.example`:
 
@@ -160,6 +164,8 @@ OPENROUTER_APP_TITLE=HyperAI
 PUBLIC_APP_URL=https://your-project.vercel.app
 ALLOWED_ORIGIN=https://your-project.vercel.app
 ENABLE_OPENROUTER_WEB_SEARCH=false
+UPSTASH_REDIS_REST_URL=https://YOUR-DATABASE.upstash.io
+UPSTASH_REDIS_REST_TOKEN=replace_with_your_upstash_rest_token
 ```
 
 `OPENROUTER_API_KEY` pada contoh di atas adalah placeholder, **bukan key yang valid**. Jangan isi file contoh ini dengan secret asli.
@@ -264,7 +270,9 @@ Beberapa file mungkin tidak ada atau berada di direktori lain. Dokumentasi ini t
 | Web Search tidak berjalan | Periksa `ENABLE_OPENROUTER_WEB_SEARCH`, pilihan UI, dukungan endpoint, serta log error dan biaya tool. |
 | Browser menampilkan CORS error | Periksa nilai `ALLOWED_ORIGIN`, protokol `https://`/`http://`, port lokal, dan origin yang benar-benar digunakan. |
 | Respons berhenti saat streaming | Periksa `maxDuration`, log function, status provider, koneksi client, dan batas layanan. |
-| Banyak request tak dikenal | CORS bukan proteksi penyalahgunaan. Batasi akses dan tambahkan rate limiting/autentikasi yang sesuai. |
+| HTTP 503 `RATE_LIMIT_UNAVAILABLE` | Pastikan `UPSTASH_REDIS_REST_URL` dan `UPSTASH_REDIS_REST_TOKEN` terpasang di environment Vercel yang benar, Redis tersedia, dan redeploy sudah selesai. |
+| HTTP 429 `RATE_LIMITED` | Batas request per-IP atau global tercapai. Tunggu sesuai header `Retry-After`; jangan melakukan retry loop agresif. |
+| Banyak request tak dikenal | Periksa Vercel/Upstash usage dan pertimbangkan firewall/WAF. Rate limiting IP mengurangi abuse tetapi bukan autentikasi atau jaminan batas biaya harian. |
 
 ## 🤝 Kontribusi dan Pelaporan Bug
 
