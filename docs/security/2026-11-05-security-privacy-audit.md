@@ -16,7 +16,7 @@ The current project is a small serverless AI frontend/backend with six public AP
 2. Replaced the API-key-shaped placeholder in `.env.example` with a clearly non-secret placeholder.
 3. Removed direct personal phone/payment contact details from the current `public/index.html`.
 4. Added direct links to the project source repository and AGPL license in the UI.
-5. Added `lib/rate-limit.js` and integrated it into all six POST routes. Production requires Upstash Redis REST credentials; requests fail closed with HTTP 503 if the limiter is not configured or unavailable. Per-route and global 60-second limits return HTTP 429 when reached.
+5. Added `lib/rate-limit.js` and integrated it into all six POST routes. Production and Preview deployments require Upstash Redis REST credentials; requests fail closed with HTTP 503 if the limiter is not configured or unavailable. Per-route and global 60-second limits return HTTP 429 when reached.
 6. Added rate-limit regression tests and a deployment setup guide. No production API request/response contract or model-routing behavior was intentionally changed apart from 429/503 protection responses.
 
 **Important historical exposure note:** removing contact details from the current file does not erase older Git commits. The old file content may remain accessible in repository history. History rewriting was not performed.
@@ -65,7 +65,7 @@ The current project is a small serverless AI frontend/backend with six public AP
 | 5 | Check user access | No user identity or role model exists. | **Required with authentication** |
 | 6 | Sanitize forms | Chat input is length-limited in the browser and validated server-side. Other routes validate their own request fields. | **Partial; extend schema tests** |
 | 7 | Protect against XSS | Frontend escapes HTML before applying its limited Markdown rendering and only auto-links HTTP(S) URLs. It still uses a custom renderer and `innerHTML`; this is not a formal sanitizer guarantee. | **Partial; add XSS regression tests and consider a maintained sanitizer/parser** |
-| 8 | Add rate limiting | `lib/rate-limit.js` now enforces atomic Upstash Redis per-IP route limits and a global 120-request/60-second ceiling across all six POST endpoints. Production fails closed if Redis credentials/service or the trusted client-IP header is unavailable. | **Implemented in source; Vercel/Upstash activation and production verification pending** |
+| 8 | Add rate limiting | `lib/rate-limit.js` now enforces atomic Upstash Redis per-IP route limits and a global 120-request/60-second ceiling across all six POST endpoints. Production and Preview deployments fail closed if Redis credentials/service or the trusted client-IP header is unavailable. | **Implemented in source; Vercel/Upstash activation and production verification pending** |
 | 9 | Secure API endpoints | Method checks, input validation, model allowlists, server-side secrets, and shared rate limiting exist in source. User authentication and per-user quotas remain absent. | **Partial — production configuration pending** |
 | 10 | Check CORS settings | Optional `ALLOWED_ORIGIN` is an origin filter, but requests without an Origin header are allowed. CORS does not authenticate non-browser clients. | **Partial; keep CORS and add auth** |
 | 11 | Add security headers | Five baseline headers added to `vercel.json`. | **Source fixed; deployment verification pending** |
@@ -159,5 +159,7 @@ This report reflects only the reviewed repository snapshot and evidence availabl
 - HTTP 429 includes `Retry-After` and rate-limit headers. Redis/configuration/IP failures return HTTP 503 (fail closed).
 - Added `test/rate-limit.test.js` for atomic command construction, hashed identifiers, 429 behavior, Redis outage behavior, missing configuration, and route blocking.
 - Setup instructions: [Security 0.1 rate-limit setup](0.1-rate-limit-setup.md).
-- **Deployment remains pending:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel Production (and any intended Preview/Development environment), redeploy, and verify a successful request plus an expected 429. This repository connection cannot inspect or change those private environment variables.
+- **Deployment remains pending:** add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` to Vercel Production and Preview, redeploy, and verify a successful request plus an expected 429. This repository connection cannot inspect or change those private environment variables.
 - IP-based throttling is not authentication, not a per-user quota, and not a guaranteed daily spending cap. The current frontend remains anonymous/public.
+
+- GitHub Actions run [42018000381](https://github.com/Hanzet22/hyperai-openrouter-backend/actions/runs/42018000381) completed successfully on Node.js 22: **24 tests passed, 0 failed**, including the Vercel Preview enforcement test.
