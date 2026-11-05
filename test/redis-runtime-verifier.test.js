@@ -19,7 +19,7 @@ test("live Redis verifier exercises every application Lua script and cleans up",
   const expected = [
     "PONG",
     [1, 1, 1, 5000], [1, 2, 2, 5000], [0, 2, 2, 4999],
-    [1, 1, 1], [0, 1, 1], [1], [1, 1, 1],
+    [1, 1, 1], [0, 1, 1], [1], [1, 1, 1], [1],
     [1, 0], 1, 2, [0, 30], 0, [1, 1], [0, 5], 1, [1, 0], 7
   ];
   const calls = [];
@@ -41,7 +41,7 @@ test("live Redis verifier exercises every application Lua script and cleans up",
 
   assert.deepEqual(result, { ok: true, checks: 4 });
   assert.equal(expected.length, 0);
-  assert.equal(calls.length, 18);
+  assert.equal(calls.length, 19);
   assert.ok(calls.every((call) => call.url === "https://redis.example"));
   assert.ok(calls.every((call) => call.options.headers.Authorization === "Bearer test-redis-token"));
   assert.equal(calls[0].body[0], "PING");
