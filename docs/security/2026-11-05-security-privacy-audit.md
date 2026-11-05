@@ -119,7 +119,7 @@ The current project is a small serverless AI frontend/backend with six public AP
 These are research starting points, not a legal opinion:
 
 - [UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi](https://peraturan.bpk.go.id/Details/229798/uu-no-27-) — recorded as in force; includes personal-data processing and data-subject rights.
-- [PP No. 17 Tahun 2025](https://peraturan.bpk.go.id/) — governance of electronic-system operation for child protection. Verify the official text and applicability to the service.
+- [PP No. 17 Tahun 2025](https://peraturan.bpk.go.id/Details/316698/pp-no-17-tahun-2025) — governance of electronic-system operation for child protection. Verify the official text and applicability to the service.
 - [Permenkomdigi No. 9 Tahun 2026](https://jdih.komdigi.go.id/produk_hukum/view/id/1007/t/peraturan%2Bmenteri%2Bkomunikasi%2Bdan%2Bdigital%2Bnomor%2B9%2Btahun%2B2026) — implementing regulation for PP 17/2025; the JDIH record lists it as in force from 6 March 2026.
 
 Applicability depends on the service, its operator, audience, processing activities, and current implementing rules. Have a qualified Indonesian legal professional and responsible adult review the final product and policies before public/commercial launch.
