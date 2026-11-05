@@ -312,8 +312,9 @@ export default async function handler(req, res) {
       if (modelConfig.api === "responses") await pipeResponsesAsChatStream(upstream, res, model);
       else await pipeChatCompletionStream(upstream, res, model);
     } catch (error) {
-      if (res.destroyed || res.writableEnded || error?.name === "AbortError") {
-        if (!res.destroyed && signal.aborted && String(signal.reason?.message || "").includes("timed out")) {
+      if (res.destroyed || res.writableEnded) return;
+      if (signal.aborted || error?.name === "AbortError") {
+        if (signal.aborted && String(signal.reason?.message || "").includes("timed out")) {
           return fail(res, 504, "The chat upstream exceeded its time limit.", "UPSTREAM_TIMEOUT");
         }
         return;
