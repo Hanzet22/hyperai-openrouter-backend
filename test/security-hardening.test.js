@@ -55,8 +55,8 @@ test("API route upstream targets are not selected from request fields", async ()
 });
 
 test("inline browser JavaScript parses without syntax errors", () => {
-  const blocks = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/gi)]
-    .filter((match) => !/\\bsrc\\s*=/.test(match[1]) && match[2].trim());
+  const blocks = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+    .filter((match) => !/\bsrc\s*=/.test(match[1]) && match[2].trim());
   assert.ok(blocks.length > 0, "expected at least one inline script");
   for (const [index, match] of blocks.entries()) {
     new Script(match[2], { filename: `public/index.html:inline-${index + 1}` });
