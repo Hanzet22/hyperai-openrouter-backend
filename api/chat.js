@@ -335,7 +335,7 @@ export default async function handler(req, res) {
       await recordResilienceOutcome(model, "failure");
       const message = timedOut ? "The chat upstream exceeded its time limit." : "Upstream stream interrupted.";
       try {
-        await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message } })}\\n\\n`);
+        await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message } })}\n\n`);
         res.end();
       } catch { res.destroy(); }
     }
