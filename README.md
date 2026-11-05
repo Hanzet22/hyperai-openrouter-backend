@@ -364,3 +364,8 @@ npm run verify:deployment
 ```
 
 See [Security 0.6 — Deployment Readiness](docs/security/0.6-deployment-readiness.md) for Production/Preview setup and completion criteria. Never commit or paste Redis credentials into source control, issues, logs, or chat.
+
+
+### Application security hardening (Security 0.7)
+
+Security 0.7 records the application security review, pins Markdown-rendering and fixed-upstream-target invariants with regression tests, and caps buffered speech responses at 8 MiB. This does not constitute a penetration test or browser-based XSS assessment. See [Security 0.7 — Application Security Hardening](docs/security/0.7-application-hardening.md).
