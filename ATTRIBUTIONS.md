@@ -27,9 +27,9 @@ Referensi:
 
 ## 3. Kode project dan lisensi
 
-Kode HyperAI di repository ini dinyatakan menggunakan **MIT License**, sebagaimana dijelaskan di file [`LICENSE`](LICENSE). Pastikan file `LICENSE` benar-benar tersedia dan nama pemegang hak cipta serta tahunnya sesuai sebelum rilis.
+Kode HyperAI di repository ini dilisensikan di bawah **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**, sebagaimana dijelaskan di file [`LICENSE`](LICENSE). SPDX identifier: `AGPL-3.0-or-later`.
 
-Lisensi MIT untuk kode project tidak memberikan lisensi atas merek dagang, layanan eksternal, model AI, atau asset yang dimiliki pihak lain.
+AGPLv3 Section 13 mewajibkan versi modifikasi yang mendukung interaksi jarak jauh melalui jaringan untuk menawarkan Corresponding Source kepada pengguna yang berinteraksi dengannya. Deployment HyperAI harus menyediakan akses yang mudah ditemukan ke source code versi yang sedang dijalankan. Lisensi ini tidak otomatis mencakup merek dagang, layanan eksternal, model AI, atau asset pihak ketiga; ketentuan masing-masing tetap berlaku.
 
 ## 4. Asset visual, audio, video, font, dan ikon
 
