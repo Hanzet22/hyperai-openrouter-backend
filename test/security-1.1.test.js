@@ -82,3 +82,50 @@ test("session endpoint is included in the Redis login-attempt rate-limit policy"
   const source = await readFile(new URL("../lib/rate-limit.js", import.meta.url), "utf8");
   assert.match(source, /session:\s*6/);
 });
+
+test("auth and budget controls are connected to the shared upstream path", async () => {
+  const auth = await readFile(new URL("../lib/auth.js", import.meta.url), "utf8");
+  const shared = await readFile(new URL("../lib/openrouter.js", import.meta.url), "utf8");
+  const concurrency = await readFile(new URL("../lib/concurrency.js", import.meta.url), "utf8");
+  const budget = await readFile(new URL("../lib/budget.js", import.meta.url), "utf8");
+  assert.match(shared, /requireSession\(req, res\)/);
+  assert.match(auth, /createHmac/);
+  assert.match(auth, /timingSafeEqual/);
+  assert.match(auth, /HttpOnly; Secure; SameSite=Lax/);
+  assert.match(auth, /enforceRateLimit\(req, res, "session"\)/);
+  assert.match(concurrency, /reserveDailyBudget\(route\)/);
+  assert.match(shared, /recordReportedCost\(reportedCost, route\)/);
+  assert.match(budget, /DAILY_REPORTED_COST_LIMIT/);
+});
+
+test("frontend provides a password input and obtains a session before chat requests", async () => {
+  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /async function ensureAccessSession\(\)/);
+  assert.match(html, /fetch\("\/api\/session"/);
+  assert.match(html, /input\.type = "password"/);
+  assert.match(html, /await ensureAccessSession\(\)/);
+  assert.doesNotMatch(html, /localStorage\.setItem\([^\n]*(?:password|token)/i);
+});
+
+test("CSP is report-only while inline-script migration remains pending", async () => {
+  const config = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+  const headers = config.headers.find((entry) => entry.source === "/(.*)")?.headers || [];
+  const csp = headers.find((entry) => entry.key.toLowerCase() === "content-security-policy-report-only");
+  assert.ok(csp);
+  assert.match(csp.value, /object-src 'none'/);
+  assert.match(csp.value, /frame-ancestors 'none'/);
+  assert.ok(!headers.some((entry) => entry.key.toLowerCase() === "content-security-policy"));
+  assert.equal(config.functions["api/session.js"].maxDuration, 10);
+});
+
+test("budget guard is optional until explicitly configured and is fail-closed on Redis errors", async () => {
+  const { reserveDailyBudget } = await import("../lib/budget.js");
+  await withEnvironment({ NODE_ENV: "test", VERCEL_ENV: undefined, HYPERAI_DAILY_REQUEST_LIMIT: "50" }, async () => {
+    const result = await reserveDailyBudget("chat");
+    assert.equal(result.allowed, true);
+    assert.equal(result.enabled, false);
+  });
+  const source = await readFile(new URL("../lib/budget.js", import.meta.url), "utf8");
+  assert.match(source, /BUDGET_GUARD_UNAVAILABLE/);
+  assert.match(source, /DAILY_REQUEST_LIMIT/);
+});
