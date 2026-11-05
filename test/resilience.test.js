@@ -134,3 +134,60 @@ test("local development bypasses distributed circuit coordination", async () => 
     });
   });
 });
+
+
+test("five transient failures open the circuit and a failed half-open probe reopens it", async () => {
+  await withEnvironment(redisEnv, async () => {
+    let now = 100_000;
+    let failures = 0;
+    let openUntil = 0;
+    let probeHeld = false;
+    await withFetch(async (url, options) => {
+      if (!String(url).includes("redis.example")) {
+        return new Response("provider unavailable", { status: 503 });
+      }
+      const command = JSON.parse(options.body);
+      const script = command[1];
+      if (script.includes('HGET')) {
+        if (openUntil > now) return jsonResponse({ result: [0, Math.ceil((openUntil - now) / 1000)] });
+        if (openUntil > 0) {
+          if (probeHeld) return jsonResponse({ result: [0, 5] });
+          probeHeld = true;
+          return jsonResponse({ result: [1, 1] });
+        }
+        return jsonResponse({ result: [1, 0] });
+      }
+      if (script.includes('INCR')) {
+        failures += 1;
+        const wasProbe = probeHeld;
+        if (failures >= 5 || wasProbe) openUntil = now + 30_000;
+        probeHeld = false;
+        return jsonResponse({ result: failures });
+      }
+      if (script.includes('DEL')) {
+        failures = 0;
+        openUntil = 0;
+        probeHeld = false;
+        return jsonResponse({ result: 1 });
+      }
+      throw new Error("Unexpected Redis script");
+    }, async () => {
+      for (let i = 0; i < 5; i += 1) {
+        const response = await fetchWithResilience("https://openrouter.example/test", { method: "POST" }, { key: "model-breaker" });
+        assert.equal(response.status, 503);
+      }
+      await assert.rejects(
+        fetchWithResilience("https://openrouter.example/test", { method: "POST" }, { key: "model-breaker" }),
+        (error) => error.code === "UPSTREAM_CIRCUIT_OPEN"
+      );
+
+      now += 31_000;
+      const probe = await fetchWithResilience("https://openrouter.example/test", { method: "POST" }, { key: "model-breaker" });
+      assert.equal(probe.status, 503);
+      await assert.rejects(
+        fetchWithResilience("https://openrouter.example/test", { method: "POST" }, { key: "model-breaker" }),
+        (error) => error.code === "UPSTREAM_CIRCUIT_OPEN"
+      );
+    });
+  });
+});
