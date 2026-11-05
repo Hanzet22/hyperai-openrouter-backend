@@ -1,5 +1,5 @@
 /** Free text-to-speech helper. POST /api/speech; returns raw audio bytes. */
-import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, withUpstreamGuard, fetchWithResilience, recordResilienceOutcome } from "../lib/openrouter.js";
+import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, mapUpstreamFailure, withUpstreamGuard, fetchWithResilience, recordResilienceOutcome } from "../lib/openrouter.js";
 
 const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
@@ -58,8 +58,11 @@ export default async function handler(req, res) {
     } catch (error) {
       if (res.destroyed || res.writableEnded) return;
       const timedOut = signal.aborted && String(signal.reason?.message || "").includes("timed out");
-      const status = Number(error?.status) || (timedOut ? 504 : 502);
-      return fail(res, status, String(error?.message || (timedOut ? "The speech upstream exceeded its time limit." : "OpenRouter connection failed.")).slice(0, 400), error?.code || (timedOut ? "UPSTREAM_TIMEOUT" : "UPSTREAM_CONNECTION_FAILED"));
+      const mapped = mapUpstreamFailure(
+        timedOut ? { code: "UPSTREAM_TIMEOUT" } : error,
+        "OpenRouter speech connection failed."
+      );
+      return fail(res, mapped.status, mapped.message, mapped.code);
     }
 
     if (!upstream.ok) {
