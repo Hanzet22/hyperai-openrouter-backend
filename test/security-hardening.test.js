@@ -127,7 +127,7 @@ test("all six API routes enter through the shared POST, origin, and rate-limit g
   const routes = ["chat", "decisions", "embeddings", "moderate", "rerank", "speech"];
   for (const route of routes) {
     const source = await readFile(new URL(`../api/${route}.js`, import.meta.url), "utf8");
-    assert.match(source, new RegExp(`preparePost\\\\(req,\\\\s*res,\\\\s*["']${route}["']\\\\)`), `${route} must use preparePost`);
+    assert.ok(source.includes(`preparePost(req, res, "${route}")`), `${route} must use preparePost`);
   }
 });
 
@@ -161,7 +161,7 @@ test("deployment security headers are present in Vercel configuration", async ()
   assert.equal(values.get("x-frame-options"), "DENY");
   assert.equal(values.get("referrer-policy"), "strict-origin-when-cross-origin");
   assert.match(values.get("strict-transport-security") || "", /max-age=31536000/);
-  assert.match(values.get("permissions-policy") || "", /camera=\\(\\)/);
+  assert.ok((values.get("permissions-policy") || "").includes("camera=()"));
 });
 
 test("all six API routes have explicit Vercel function duration configuration", async () => {
