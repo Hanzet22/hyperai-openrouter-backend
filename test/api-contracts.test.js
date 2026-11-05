@@ -126,3 +126,26 @@ test("configured origin policy rejects an unlisted browser origin", async () => 
     assert.equal(res.json().error.code, "ORIGIN_NOT_ALLOWED");
   });
 });
+
+
+test("server emergency kill switch blocks AI requests before upstream", async () => {
+  await withEnvironment({ OPENROUTER_API_KEY: "test-key", HYPERAI_AI_ENABLED: "false" }, async () => {
+    let upstreamCalls = 0;
+    await withFetch(async () => { upstreamCalls += 1; return jsonResponse({ ok: true }); }, async () => {
+      const res = new MockResponse();
+      await moderate(makeRequest({ body: { text: "hello" } }), res);
+      assert.equal(res.statusCode, 503);
+      assert.equal(res.json().error.code, "AI_SERVICE_DISABLED");
+      assert.equal(upstreamCalls, 0);
+    });
+  });
+});
+
+test("shared request body ceiling rejects oversized JSON before route processing", async () => {
+  await withEnvironment({ OPENROUTER_API_KEY: "test-key", HYPERAI_AI_ENABLED: "true" }, async () => {
+    const res = new MockResponse();
+    await moderate(makeRequest({ body: { text: "x".repeat(262_145) } }), res);
+    assert.equal(res.statusCode, 413);
+    assert.equal(res.json().error.code, "REQUEST_BODY_TOO_LARGE");
+  });
+});
