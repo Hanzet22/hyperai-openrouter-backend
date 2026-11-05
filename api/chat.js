@@ -13,6 +13,7 @@ import {
   fail,
   openRouterHeaders,
   extractUpstreamMessage,
+  mapUpstreamFailure,
   recordUsage,
   withUpstreamGuard,
   fetchWithResilience,
@@ -229,9 +230,10 @@ async function pipeResponsesAsChatStream(upstream, res, model) {
       return;
     }
     if (event.type === "response.failed" || event.type === "error" || event.error) {
-      const message = event.error?.message || event.response?.error?.message || event.message || "Responses API stream failed.";
+      // Provider stream errors may contain internal diagnostics or echoed metadata.
+      // Keep the public SSE error generic and never forward raw provider text.
       await recordResilienceOutcome(model, "failure");
-      await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message: String(message).slice(0, 1000) } })}\n\n`);
+      await writeWithBackpressure(res, `data: ${JSON.stringify({ error: { message: "OpenRouter stream failed. Please retry later." } })}\n\n`);
       sawDone = true;
     }
   };
@@ -324,13 +326,11 @@ export default async function handler(req, res) {
       if (signal.aborted && !timedOut) return;
 
       if (!res.headersSent) {
-        if (error?.status) return fail(res, error.status, error.message, error.code || "UPSTREAM_RESILIENCE_ERROR");
-        return fail(
-          res,
-          timedOut ? 504 : 502,
-          timedOut ? "The chat upstream exceeded its time limit." : `OpenRouter connection failed: ${String(error?.message || "Unknown upstream error").slice(0, 400)}`,
-          timedOut ? "UPSTREAM_TIMEOUT" : "UPSTREAM_CONNECTION_FAILED"
+        const mapped = mapUpstreamFailure(
+          timedOut ? { code: "UPSTREAM_TIMEOUT" } : error,
+          "OpenRouter connection failed."
         );
+        return fail(res, mapped.status, mapped.message, mapped.code);
       }
 
       await recordResilienceOutcome(model, "failure");
