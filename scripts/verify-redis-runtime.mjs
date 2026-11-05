@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import process from "node:process";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { RATE_LIMIT_SCRIPT } from "../lib/rate-limit.js";
 import { ACQUIRE_SCRIPT, RELEASE_SCRIPT } from "../lib/concurrency.js";
 import { CHECK_SCRIPT, FAILURE_SCRIPT, SUCCESS_SCRIPT } from "../lib/resilience.js";
@@ -122,7 +124,7 @@ export async function runRedisRuntimeVerification({
   }
 }
 
-const invokedPath = process.argv[1] ? new URL(`file://${process.argv[1]}`).href : "";
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";
 if (invokedPath === import.meta.url) {
   try {
     const result = await runRedisRuntimeVerification({
