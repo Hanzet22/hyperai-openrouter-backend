@@ -126,6 +126,12 @@ Security 0.2 adds a shared 256 KiB JSON request ceiling, server-enforced output 
 
 Application limits are defense in depth, not a substitute for a provider-side spend ceiling. Use a dedicated OpenRouter API key for HyperAI and configure a per-key credit limit in the OpenRouter dashboard. If the workspace supports budget controls, configure a workspace or guardrail budget too. Choose a cap appropriate to the project owner; do not assume that a model marked `:free` or disabled Web Search guarantees zero charges. See the [Security 0.2 cost-protection guide](docs/security/0.2-cost-protection.md) and the [OpenRouter spend controls](https://openrouter.ai/docs/guides/best-practices/spend-controls).
 
+### Request concurrency and resource protection
+
+Security 0.3 adds a shared Redis-backed concurrency guard around upstream AI work. It admits up to 24 in-flight requests globally, with route ceilings (chat 8, speech 3, decisions/embeddings/moderation 8 each, rerank 6). Saturated routes return HTTP 429 instead of queueing unlimited work. A permit is acquired and released atomically with Redis Lua; abandoned permits expire after 70 seconds.
+
+Upstream deadlines are bounded below the configured Vercel function duration: chat 55 seconds, speech 50 seconds, and JSON endpoints 25 seconds. Client disconnects and request-abort events cancel the upstream fetch/stream where supported. Redis failures fail closed with HTTP 503. This is distributed backpressure, not a guarantee against all platform-level resource exhaustion or a substitute for authentication. See the [Security 0.3 concurrency and resource-protection guide](docs/security/0.3-concurrency-resource-protection.md).
+
 ### Security review record
 
 See the [Security, Privacy, and Compliance Audit](docs/security/2026-11-05-security-privacy-audit.md) for the reviewed risks, limitations, and outstanding work. The report is a source/configuration review, not a penetration test or legal compliance certification.
