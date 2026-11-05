@@ -16,5 +16,5 @@ export default async function handler(req, res) {
   if (!Number.isInteger(topN) || topN < 1 || topN > documents.length) return fail(res, 400, "top_n harus bilangan bulat antara 1 dan jumlah documents.", "INVALID_TOP_N");
   const payload = { model: MODEL, query, documents, top_n: topN };
   if (jsonSize(payload) > 100_000) return fail(res, 413, "Payload rerank terlalu besar (maks. 100 KB).", "PAYLOAD_TOO_LARGE");
-  return forwardJson(req, res, "/rerank", payload);
+  return forwardJson(req, res, "/rerank", payload, "rerank");
 }
