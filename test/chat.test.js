@@ -46,6 +46,7 @@ test("Chat Completions adapter forwards its protocol and streams SSE", async () 
     });
     assert.ok(target.endsWith("/chat/completions"));
     assert.equal(sentPayload.model, CHAT_MODEL);
+    assert.equal(sentPayload.max_tokens, 2048);
     assert.deepEqual(sentPayload.reasoning, { effort: "high" });
   });
 });
@@ -53,8 +54,10 @@ test("Chat Completions adapter forwards its protocol and streams SSE", async () 
 test("Responses adapter normalizes output_text deltas into chat-compatible SSE", async () => {
   await withEnvironment({ OPENROUTER_API_KEY: "test-key" }, async () => {
     let target = "";
-    await withFetch(async (url) => {
+    let sentPayload;
+    await withFetch(async (url, options) => {
       target = String(url);
+      sentPayload = JSON.parse(options.body);
       return new Response('event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"responses-adapter"}\n\nevent: response.completed\ndata: {"type":"response.completed"}\n\n', {
         status: 200, headers: { "content-type": "text/event-stream" }
       });
@@ -66,6 +69,7 @@ test("Responses adapter normalizes output_text deltas into chat-compatible SSE",
       assert.match(res.text(), /\[DONE\]/);
     });
     assert.ok(target.endsWith("/responses"));
+    assert.equal(sentPayload.max_output_tokens, 2048);
   });
 });
 
