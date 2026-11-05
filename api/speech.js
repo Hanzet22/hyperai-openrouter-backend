@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     const contentType = upstream.headers.get("content-type") || "";
     if (!contentType.startsWith("audio/")) {
       await recordResilienceOutcome(MODEL, "failure");
-      const text = await upstream.text();
+      const text = await readUpstreamText(upstream, 16 * 1024);
       return fail(res, 502, extractUpstreamMessage(text, 502), "INVALID_AUDIO_RESPONSE");
     }
     try {
