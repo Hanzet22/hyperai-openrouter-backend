@@ -1,5 +1,5 @@
 /** Free text-to-speech helper. POST /api/speech; returns raw audio bytes. */
-import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, withUpstreamGuard } from "../lib/openrouter.js";
+import { preparePost, fail, openRouterHeaders, OPENROUTER_BASE, extractUpstreamMessage, withUpstreamGuard, fetchWithResilience } from "../lib/openrouter.js";
 
 const MODEL = "fish-audio/s2.1-pro-free:free";
 const FORMATS = new Set(["mp3", "wav", "opus", "aac", "flac", "pcm"]);
@@ -18,16 +18,17 @@ export default async function handler(req, res) {
   return withUpstreamGuard(req, res, "speech", 50_000, async (signal) => {
     let upstream;
     try {
-      upstream = await fetch(`${OPENROUTER_BASE}/audio/speech`, {
+      upstream = await fetchWithResilience(`${OPENROUTER_BASE}/audio/speech`, {
         method: "POST",
         headers: openRouterHeaders(req),
         body: JSON.stringify({ model: MODEL, input, voice, response_format: responseFormat }),
         signal
-      });
+      }, { key: MODEL, retryRateLimit: false });
     } catch (error) {
       if (res.destroyed || res.writableEnded) return;
       const timedOut = signal.aborted && String(signal.reason?.message || "").includes("timed out");
-      return fail(res, timedOut ? 504 : 502, timedOut ? "The speech upstream exceeded its time limit." : `OpenRouter connection failed: ${String(error?.message || "network error").slice(0, 400)}`, timedOut ? "UPSTREAM_TIMEOUT" : "UPSTREAM_CONNECTION_FAILED");
+      const status = Number(error?.status) || (timedOut ? 504 : 502);
+      return fail(res, status, String(error?.message || (timedOut ? "The speech upstream exceeded its time limit." : "OpenRouter connection failed.")).slice(0, 400), error?.code || (timedOut ? "UPSTREAM_TIMEOUT" : "UPSTREAM_CONNECTION_FAILED"));
     }
 
     if (!upstream.ok) {
