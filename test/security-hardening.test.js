@@ -115,7 +115,7 @@ test("supply-chain baseline has no undeclared runtime or development packages", 
 
 test("GitHub Actions third-party actions are pinned to full commit SHAs", async () => {
   const workflow = await readFile(new URL("../.github/workflows/baseline-tests.yml", import.meta.url), "utf8");
-  const actionRefs = [...workflow.matchAll(/^\s+uses:\s+([^\s]+)$/gm)].map((match) => match[1]);
+  const actionRefs = [...workflow.matchAll(/^\s+uses:\s+([^\s#]+)(?:\s+#.*)?$/gm)].map((match) => match[1]);
   assert.ok(actionRefs.length > 0, "expected at least one pinned workflow action");
   for (const ref of actionRefs) {
     assert.match(ref, /@[a-f0-9]{40}$/, `workflow action must be pinned to a full SHA: ${ref}`);
