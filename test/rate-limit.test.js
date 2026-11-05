@@ -125,3 +125,21 @@ test("production requests without Vercel's trusted client IP fail closed", async
     assert.equal(res.json().error.code, "RATE_LIMIT_UNAVAILABLE");
   });
 });
+
+test("Vercel Preview deployments enforce rate limiting even with development NODE_ENV", async () => {
+  await withEnvironment({
+    NODE_ENV: "development",
+    VERCEL_ENV: "preview",
+    UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+    UPSTASH_REDIS_REST_TOKEN: "test-redis-token"
+  }, async () => {
+    await withFetch(async () => new Response(JSON.stringify({ result: [1, 1, 1, 60000] }), {
+      status: 200, headers: { "content-type": "application/json" }
+    }), async () => {
+      const res = new MockResponse();
+      const allowed = await enforceRateLimit(makeRequest({ headers: { "x-real-ip": "203.0.113.14" } }), res, "chat");
+      assert.equal(allowed, true);
+      assert.equal(res.getHeader("ratelimit-limit"), "8");
+    });
+  });
+});
