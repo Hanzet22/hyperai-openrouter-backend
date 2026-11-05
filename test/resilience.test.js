@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fetchWithResilience, parseRetryAfter, resiliencePolicy } from "../lib/resilience.js";
+import { fetchWithResilience, parseRetryAfter, resiliencePolicy, recordResilienceOutcome } from "../lib/resilience.js";
 import { withEnvironment, withFetch, jsonResponse } from "./helpers.js";
 
 const redisEnv = {
@@ -188,6 +188,22 @@ test("five transient failures open the circuit and a failed half-open probe reop
         fetchWithResilience("https://openrouter.example/test", { method: "POST" }, { key: "model-breaker" }),
         (error) => error.code === "UPSTREAM_CIRCUIT_OPEN"
       );
+    });
+  });
+});
+
+
+test("post-header stream failures can be recorded against the model circuit", async () => {
+  await withEnvironment(redisEnv, async () => {
+    let commandSeen = null;
+    await withFetch(async (_url, options) => {
+      commandSeen = JSON.parse(options.body);
+      return jsonResponse({ result: 1 });
+    }, async () => {
+      await recordResilienceOutcome("model-stream", "failure");
+      assert.match(commandSeen[1], /INCR/);
+      assert.equal(commandSeen[2], "3");
+      assert.equal(commandSeen[3], "hyperai:resilience:v1:circuit:" + commandSeen[3].split(":").at(-2) + ":state");
     });
   });
 });
